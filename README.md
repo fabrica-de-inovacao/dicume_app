@@ -20,7 +20,7 @@ Aplicativo móvel educacional nutricional para pessoas com diabetes mellitus tip
 
 - **Framework:** Flutter + FVM
 - **Gerenciamento de Estado:** Riverpod + Annotations
-- **Cache Local:** Isar (NoSQL)
+- **Cache Local:** Drift (SQLite)
 - **Cliente HTTP:** Dio
 - **Animações:** Lottie + flutter_animate
 - **Autenticação:** Google Sign-In + SMS via API
@@ -35,7 +35,7 @@ lib/
 │   ├── utils/             # Utilitários
 │   └── models/            # Modelos de dados
 ├── data/                  # Camada de dados
-│   ├── local/             # Fonte de dados local (Isar)
+│   ├── local/             # Fonte de dados local (Drift/SQLite)
 │   ├── remote/            # Fonte de dados remota (API)
 │   └── repositories/      # Implementação dos repositórios
 ├── domain/                # Regras de negócio
@@ -143,7 +143,7 @@ fvm flutter run
 ### Comandos Úteis
 
 ```bash
-# Gerar código (Riverpod + Isar)
+# Gerar código (Riverpod + Drift)
 fvm flutter packages pub run build_runner build --delete-conflicting-outputs
 
 # Watch mode para development

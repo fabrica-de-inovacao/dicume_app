@@ -35,7 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -82,7 +82,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -102,7 +102,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -134,7 +134,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (token != null) {
         try {
           final connectivityResult = await connectivity.checkConnectivity();
-          if (connectivityResult != ConnectivityResult.none) {
+          if (!connectivityResult.contains( ConnectivityResult.none)) {
             await remoteDataSource.signOut(token.accessToken);
           }
         } catch (e) {
@@ -194,7 +194,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -234,7 +234,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 

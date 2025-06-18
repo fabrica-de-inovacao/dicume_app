@@ -1,40 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/animation_constants.dart';
+import '../../../core/router/app_router.dart';
+import '../../controllers/auth_controller.dart';
 
-class SplashScreen extends StatefulWidget {
+class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  State<SplashScreen> createState() => _SplashScreenState();
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  bool _hasNavigated = false;
+
   @override
   void initState() {
     super.initState();
-    _navigateToNextScreen();
+    _checkAuthAndNavigate();
   }
 
-  void _navigateToNextScreen() async {
+  void _checkAuthAndNavigate() async {
+    // Aguarda um tempo mínimo para mostrar a splash screen
     await Future.delayed(AnimationConstants.splashDuration);
 
-    if (mounted) {
-      // TODO: Verificar se usuário está logado
-      // Por enquanto, vai direto para uma tela temporária
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder:
-              (context, animation, secondaryAnimation) =>
-                  const TemporaryHomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      );
+    if (mounted && !_hasNavigated) {
+      _hasNavigated = true;
+
+      // Lê o estado de autenticação
+      final authState = ref.read(authControllerProvider);
+
+      // Decide para onde navegar baseado no estado
+      if (authState.isAuthenticated) {
+        context.go(AppRoutes.home);
+      } else {
+        context.go(AppRoutes.login);
+      }
     }
   }
 
@@ -137,68 +143,4 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
-// Tela temporária para testar o setup
-class TemporaryHomeScreen extends StatelessWidget {
-  const TemporaryHomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('DICUMÊ Setup Completo!')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.check_circle,
-              size: 120,
-              color: AppColors.semaforoVerde,
-            ).animate().scale(
-              duration: AnimationConstants.slowAnimation,
-              curve: Curves.elasticOut,
-            ),
-
-            const SizedBox(height: 32),
-
-            Text(
-              '🎉 Checkpoint 1.1 Completo!',
-              style: AppTextStyles.screenTitle,
-              textAlign: TextAlign.center,
-            ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.3, end: 0),
-
-            const SizedBox(height: 16),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                '✅ Flutter com FVM configurado\n'
-                '✅ Estrutura Clean Architecture\n'
-                '✅ Dependências instaladas\n'
-                '✅ Tema maranhense aplicado\n'
-                '✅ Riverpod configurado\n'
-                '✅ Animações funcionando',
-                style: AppTextStyles.textTheme.bodyLarge,
-                textAlign: TextAlign.center,
-              ),
-            ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.3, end: 0),
-
-            const SizedBox(height: 32),
-
-            ElevatedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Pronto para o próximo checkpoint! 🚀'),
-                    backgroundColor: AppColors.semaforoVerde,
-                  ),
-                );
-              },
-              icon: Icon(Icons.rocket_launch),
-              label: Text('Próximo Checkpoint'),
-            ).animate(delay: 600.ms).fadeIn().scale(curve: Curves.elasticOut),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Tela temporária para testar o setup (removida pois não é mais necessária)

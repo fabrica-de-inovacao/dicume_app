@@ -3,9 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
-import 'presentation/screens/splash/splash_screen.dart';
-import 'presentation/controllers/auth_controller.dart';
-import 'presentation/screens/auth/simple_login_screen.dart';
+import 'core/router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,11 +31,13 @@ class DicumeApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return MaterialApp(
+    final router = ref.watch(routerProvider);
+
+    return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.theme,
-      home: const AppNavigator(),
+      routerConfig: router,
 
       // Configurações de acessibilidade
       builder: (context, child) {
@@ -51,59 +51,6 @@ class DicumeApp extends ConsumerWidget {
           child: child!,
         );
       },
-    );
-  }
-}
-
-// Navigator principal que controla o fluxo da aplicação
-class AppNavigator extends ConsumerWidget {
-  const AppNavigator({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
-
-    // Exibe diferentes telas baseado no estado de autenticação
-    switch (authState.status) {
-      case AuthStatus.initial:
-      case AuthStatus.loading:
-        return const SplashScreen();
-
-      case AuthStatus.authenticated:
-        return const HomeScreen(); // Placeholder por enquanto
-
-      case AuthStatus.unauthenticated:
-      case AuthStatus.error:
-        return const LoginScreen();
-    }
-  }
-}
-
-// Tela Home placeholder (será implementada posteriormente)
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('DICUMÊ'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              // Logout placeholder
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text(
-          'Bem-vindo ao DICUMÊ!\n\nAqui será implementada a tela principal.',
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 18),
-        ),
-      ),
     );
   }
 }

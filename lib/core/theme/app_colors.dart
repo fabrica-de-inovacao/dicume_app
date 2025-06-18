@@ -45,6 +45,17 @@ class AppColors {
   static const Color blue700 = Color(0xFF1565C0);
   static const Color blue800 = Color(0xFF0D47A1);
   static const Color blue900 = Color(0xFF0A3D91);
+  // Verde (para elementos de sucesso/nutrição)
+  static const Color green50 = Color(0xFFE8F5E8);
+  static const Color green100 = Color(0xFFC8E6C9);
+  static const Color green200 = Color(0xFFA5D6A7);
+  static const Color green300 = Color(0xFF81C784);
+  static const Color green400 = Color(0xFF66BB6A);
+  static const Color green500 = semaforoVerde; // 0xFF4CAF50
+  static const Color green600 = Color(0xFF43A047);
+  static const Color green700 = Color(0xFF388E3C);
+  static const Color green800 = Color(0xFF2E7D32);
+  static const Color green900 = Color(0xFF1B5E20);
 
   // Greys (para textos e elementos neutros)
   static const Color grey50 = Color(0xFFFAFAFA);

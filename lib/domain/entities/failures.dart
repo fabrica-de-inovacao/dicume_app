@@ -75,7 +75,12 @@ class TooManyAttemptsFailure extends AuthFailure {
 
 // Falhas de cache/storage
 class CacheFailure extends AuthFailure {
-  const CacheFailure();
+  final String message;
+
+  const CacheFailure(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }
 
 // Falhas de usuário

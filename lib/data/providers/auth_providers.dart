@@ -63,7 +63,6 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
       sharedPreferencesName: 'dicume_secure_prefs',
       preferencesKeyPrefix: 'dicume_',
     ),
