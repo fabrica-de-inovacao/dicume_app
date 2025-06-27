@@ -35,7 +35,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult == ConnectivityResult.none) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -48,20 +48,36 @@ class AuthRepositoryImpl implements AuthRepository {
       // Obtém o token de autenticação do Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      final String? googleToken = googleAuth.accessToken;
 
-      if (googleToken == null) {
+      // 🔑 IMPORTANTE: Usar idToken (não accessToken) para enviar à API DICUMÊ
+      final String? googleIdToken = googleAuth.idToken;
+
+      if (googleIdToken == null) {
         return const Left(
-          GoogleSignInFailure('Token do Google não disponível'),
+          GoogleSignInFailure('ID Token do Google não disponível'),
         );
       }
 
-      // Envia o token para nossa API
-      final userModel = await remoteDataSource.signInWithGoogle(googleToken);
-      final user = userModel.toEntity();
+      // Envia o ID TOKEN para nossa API DICUMÊ
+      final authResponse = await remoteDataSource.signInWithGoogle(
+        googleIdToken,
+      );
+      final user = authResponse.usuario.toEntity();
 
-      // Cache local
-      await localDataSource.cacheUser(userModel);
+      // Cache local do usuário
+      await localDataSource.cacheUser(authResponse.usuario);
+
+      // Cache local do token
+      final tokenModel = AuthTokenModel(
+        accessToken: authResponse.token,
+        refreshToken: '', // API não retorna refresh token ainda
+        tokenType: 'Bearer',
+        expiresAt:
+            DateTime.now()
+                .add(const Duration(days: 7))
+                .toIso8601String(), // Assumindo 7 dias
+      );
+      await localDataSource.cacheToken(tokenModel);
 
       // Emite mudança no estado de autenticação
       _authStateController.add(user);
@@ -82,7 +98,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult == ConnectivityResult.none) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -102,7 +118,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult == ConnectivityResult.none) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -134,7 +150,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (token != null) {
         try {
           final connectivityResult = await connectivity.checkConnectivity();
-          if (!connectivityResult.contains( ConnectivityResult.none)) {
+          if (connectivityResult != ConnectivityResult.none) {
             await remoteDataSource.signOut(token.accessToken);
           }
         } catch (e) {
@@ -194,7 +210,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult == ConnectivityResult.none) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -234,7 +250,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult.contains(ConnectivityResult.none)) {
+      if (connectivityResult == ConnectivityResult.none) {
         return const Left(NetworkAuthFailure());
       }
 

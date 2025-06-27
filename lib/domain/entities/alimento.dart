@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class Alimento extends Equatable {
-  final int id;
+  final String id; // Mudado de int para String para UUID
   final String nomePopular;
   final String grupoDicume;
   final String classificacaoCor;
@@ -30,7 +30,7 @@ class Alimento extends Equatable {
   });
 
   Alimento copyWith({
-    int? id,
+    String? id,
     String? nomePopular,
     String? grupoDicume,
     String? classificacaoCor,

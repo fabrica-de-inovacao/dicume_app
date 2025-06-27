@@ -7,7 +7,8 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/animation_constants.dart';
 import '../../../core/router/app_router.dart';
-import '../../controllers/auth_controller.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/http_service.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -29,18 +30,44 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     // Aguarda um tempo mínimo para mostrar a splash screen
     await Future.delayed(AnimationConstants.splashDuration);
 
-    if (mounted && !_hasNavigated) {
-      _hasNavigated = true;
+    if (!mounted || _hasNavigated) return;
 
-      // Lê o estado de autenticação
-      final authState = ref.read(authControllerProvider);
+    try {
+      // Inicializar apenas HttpService (AuthService já foi inicializado no main)
+      HttpService().initialize();
 
-      // Decide para onde navegar baseado no estado
-      if (authState.isAuthenticated) {
+      // Verificar se é o primeiro lançamento
+      final authService = AuthService();
+      final isFirstLaunch = await authService.isFirstLaunch();
+
+      debugPrint('🔥 [SPLASH] isFirstLaunch: $isFirstLaunch');
+
+      if (isFirstLaunch) {
+        // Primeira vez abrindo o app
+        debugPrint('🔥 [SPLASH] Navegando para onboarding...');
+        context.go(AppRoutes.onboarding);
+        return;
+      }
+
+      // Verificar se está logado
+      final isLoggedIn = await authService.isLoggedIn();
+      debugPrint('🔥 [SPLASH] isLoggedIn: $isLoggedIn');
+
+      if (isLoggedIn) {
+        // Usuário logado, ir direto para home
+        debugPrint('🔥 [SPLASH] Navegando para home (logado)...');
         context.go(AppRoutes.home);
       } else {
-        context.go(AppRoutes.login);
+        // Usuário não logado, ir para home (modo guest)
+        debugPrint('🔥 [SPLASH] Navegando para home (guest)...');
+        context.go(AppRoutes.home);
       }
+    } catch (e) {
+      debugPrint('🔥 [SPLASH] Erro: $e');
+      // Em caso de erro, ir para home
+      context.go(AppRoutes.home);
+    } finally {
+      _hasNavigated = true;
     }
   }
 

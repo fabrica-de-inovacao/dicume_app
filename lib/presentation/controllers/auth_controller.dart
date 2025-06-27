@@ -105,8 +105,8 @@ class SMSVerificationState {
 class AuthController extends _$AuthController {
   @override
   AuthState build() {
-    // Verifica se há usuário autenticado ao inicializar
-    _checkAuthStatus();
+    // Inicializar com estado inicial e verificar autenticação de forma assíncrona
+    Future.microtask(() => _checkAuthStatus());
     return const AuthState();
   }
 

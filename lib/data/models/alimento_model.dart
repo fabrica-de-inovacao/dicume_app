@@ -5,7 +5,7 @@ part 'alimento_model.g.dart';
 
 @JsonSerializable()
 class AlimentoModel {
-  final int id;
+  final String id; // Mudado de int para String pois a API retorna UUID
   @JsonKey(name: 'nome_popular')
   final String nomePopular;
   @JsonKey(name: 'grupo_dicume')

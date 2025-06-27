@@ -3,21 +3,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:async';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../domain/entities/alimento_simples.dart';
+import '../../../domain/entities/alimento.dart';
 import '../../../core/providers/feedback_providers.dart';
+import '../../../data/providers/alimento_providers.dart';
 
-// Provider simples para buscar alimentos mock
-final buscarAlimentosProvider = Provider.family<List<AlimentoSimples>, String>((
-  ref,
-  query,
-) {
-  if (query.isEmpty || query.trim().length < 2) return <AlimentoSimples>[];
-  try {
-    return AlimentoSimples.buscar(query.trim());
-  } catch (e) {
-    return <AlimentoSimples>[];
-  }
-});
+// Provider que busca alimentos do BANCO LOCAL (offline-first)
+final buscarAlimentosProvider =
+    Provider.family<AsyncValue<List<Alimento>>, String>((ref, query) {
+      if (query.isEmpty || query.trim().length < 2) {
+        return const AsyncValue.data(<Alimento>[]);
+      }
+
+      // Busca APENAS do repositório local (offline-first)
+      final alimentosRepository = ref.watch(alimentoRepositoryProvider);
+
+      return ref.watch(
+        FutureProvider<List<Alimento>>((ref) async {
+          final result = await alimentosRepository.searchAlimentos(query);
+          return result.fold(
+            (failure) => throw Exception(failure.message),
+            (alimentos) => alimentos,
+          );
+        }).select((asyncValue) => asyncValue),
+      );
+    });
 
 class BuscarAlimentosScreen extends ConsumerStatefulWidget {
   const BuscarAlimentosScreen({super.key});
@@ -46,10 +55,9 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
         setState(() {
           _searchQuery = value.trim();
         });
-
-        // Feedback leve quando busca é realizada
-        if (_searchQuery.isNotEmpty && _searchQuery.length >= 2) {
-          final feedbackService = ref.read(feedbackServiceProvider);
+        // Feedback sutil para busca
+        final feedbackService = ref.read(feedbackServiceProvider);
+        if (value.trim().isNotEmpty) {
           feedbackService.searchFeedback();
         }
       }
@@ -59,59 +67,98 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final textTheme =
-        theme.textTheme; // Watch do provider de busca de alimentos
-    final alimentos = ref.watch(buscarAlimentosProvider(_searchQuery));
+    final textTheme = theme.textTheme;
+    final alimentosAsync = ref.watch(buscarAlimentosProvider(_searchQuery));
+    final feedbackService = ref.watch(feedbackServiceProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
+
+      // AppBar moderna e acessível
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.onSurface),
-          onPressed: () async {
-            // Feedback tátil e sonoro
-            final feedbackService = ref.read(feedbackServiceProvider);
-            await feedbackService.backFeedback();
-            if (context.mounted) {
-              Navigator.of(context).pop();
-            }
-          },
+        centerTitle: true,
+        leading: Semantics(
+          label: 'Botão voltar',
+          button: true,
+          child: IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.brown50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            onPressed: () async {
+              // Feedback tátil e sonoro ao voltar
+              await feedbackService.backFeedback();
+              if (context.mounted) {
+                Navigator.of(context).pop();
+              }
+            },
+          ),
         ),
         title: Text(
           'Buscar Comidas',
-          style: textTheme.headlineSmall?.copyWith(
+          style: textTheme.titleLarge?.copyWith(
             color: AppColors.primary,
             fontWeight: FontWeight.w700,
             fontFamily: 'Montserrat',
           ),
         ),
-        centerTitle: true,
       ),
+
       body: SafeArea(
         child: Column(
           children: [
-            // Campo de busca
+            // Campo de busca moderno e acessível
             Container(
-              padding: const EdgeInsets.all(16.0),
-              color: AppColors.surface,
+              margin: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
               child: Semantics(
                 label: 'Campo de busca de alimentos',
-                hint: 'Digite o nome da comida que você quer buscar',
                 textField: true,
                 child: TextField(
                   controller: _searchController,
                   onChanged: _onSearchChanged,
+                  style: textTheme.bodyLarge?.copyWith(
+                    fontFamily: 'Montserrat',
+                    color: AppColors.onSurface,
+                  ),
                   decoration: InputDecoration(
-                    hintText: 'Digite o nome da comida...',
-                    hintStyle: textTheme.bodyMedium?.copyWith(
-                      color: AppColors.grey600,
+                    hintText: 'Ex: arroz, feijão...',
+                    hintStyle: textTheme.bodyLarge?.copyWith(
+                      color: AppColors.grey500,
                       fontFamily: 'Montserrat',
                     ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.grey600,
+                    prefixIcon: Container(
+                      margin: const EdgeInsets.all(12),
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.blue50,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.secondary,
+                        size: 24,
+                      ),
                     ),
                     suffixIcon:
                         _searchQuery.isNotEmpty
@@ -119,16 +166,25 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                               label: 'Limpar busca',
                               button: true,
                               child: IconButton(
-                                icon: const Icon(
-                                  Icons.clear,
-                                  color: AppColors.grey600,
+                                icon: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.grey100,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: const Icon(
+                                    Icons.close_rounded,
+                                    color: AppColors.grey600,
+                                    size: 16,
+                                  ),
                                 ),
                                 onPressed: () async {
-                                  // Feedback tátil e sonoro
+                                  // Feedback ao limpar busca
                                   final feedbackService = ref.read(
                                     feedbackServiceProvider,
                                   );
-                                  await feedbackService.searchFeedback();
+                                  await feedbackService.lightTap();
+                                  await feedbackService.playTapSound();
 
                                   _searchController.clear();
                                   setState(() {
@@ -138,18 +194,10 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                               ),
                             )
                             : null,
-                    filled: true,
-                    fillColor: AppColors.grey50,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(
-                        color: AppColors.secondary,
-                        width: 2,
-                      ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 16,
                     ),
                   ),
                 ),
@@ -157,17 +205,23 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
             ),
 
             // Resultados da busca
-            Expanded(child: _buildSearchResults(alimentos, textTheme)),
+            Expanded(
+              child: alimentosAsync.when(
+                data: (alimentos) => _buildSearchResults(alimentos, textTheme),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error:
+                    (error, stackTrace) => Center(
+                      child: Text('Erro ao carregar alimentos: $error'),
+                    ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSearchResults(
-    List<AlimentoSimples> alimentos,
-    TextTheme textTheme,
-  ) {
+  Widget _buildSearchResults(List<Alimento> alimentos, TextTheme textTheme) {
     if (_searchQuery.isEmpty || _searchQuery.length < 2) {
       return _buildEmptyState(textTheme);
     }
@@ -180,41 +234,44 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
   }
 
   Widget _buildEmptyState(TextTheme textTheme) {
-    return Semantics(
-      label:
-          'Tela de busca vazia. Digite pelo menos 2 letras para buscar alimentos.',
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Ícone grande e amigável
-              Container(
-                width: 120,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: AppColors.blue50,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.blue200.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Ícone grande e expressivo
+            Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColors.blue50, AppColors.blue100],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                child: const Icon(
-                  Icons.search_rounded,
-                  size: 60,
-                  color: AppColors.secondary,
-                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.secondary.withOpacity(0.2),
+                    blurRadius: 25,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-              const SizedBox(height: 32),
+              child: const Icon(
+                Icons.restaurant_menu_rounded,
+                size: 70,
+                color: AppColors.secondary,
+              ),
+            ),
+            const SizedBox(height: 40),
 
-              // Título visual e grande
-              Text(
-                'Busque uma Comida',
+            // Título visual e acessível
+            Semantics(
+              header: true,
+              child: Text(
+                'Bora Buscar!',
                 style: textTheme.headlineMedium?.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w700,
@@ -222,72 +279,85 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 16), // Descrição minimalista
-              Text(
-                'Digite para começar',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: AppColors.grey600,
-                  fontFamily: 'Montserrat',
-                ),
-                textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // Descrição minimalista
+            Text(
+              'Digite o nome da comida',
+              style: textTheme.bodyLarge?.copyWith(
+                color: AppColors.grey600,
+                fontFamily: 'Montserrat',
               ),
-            ],
-          ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildNoResultsState(TextTheme textTheme) {
-    return Semantics(
-      label:
-          'Nenhum alimento encontrado para a busca "$_searchQuery". Tente buscar com outro nome.',
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 80, color: AppColors.grey400),
-              const SizedBox(height: 16),
-              Text(
-                'Nenhuma comida encontrada',
-                style: textTheme.titleLarge?.copyWith(
-                  color: AppColors.onSurface,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'Montserrat',
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Ícone expressivo
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: AppColors.warning.withOpacity(0.3),
+                  width: 2,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Tente buscar com outro nome ou termo',
-                style: textTheme.bodyLarge?.copyWith(
-                  color: AppColors.grey600,
-                  fontFamily: 'Montserrat',
-                ),
-                textAlign: TextAlign.center,
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 60,
+                color: AppColors.warning,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+
+            Text(
+              'Opa! Não Achei',
+              style: textTheme.titleLarge?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'Montserrat',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+
+            Text(
+              'Tente outro nome',
+              style: textTheme.bodyLarge?.copyWith(
+                color: AppColors.grey600,
+                fontFamily: 'Montserrat',
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAlimentosList(
-    List<AlimentoSimples> alimentos,
-    TextTheme textTheme,
-  ) {
-    // Verificação adicional de segurança
+  Widget _buildAlimentosList(List<Alimento> alimentos, TextTheme textTheme) {
     if (alimentos.isEmpty) {
       return _buildNoResultsState(textTheme);
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       itemCount: alimentos.length,
       itemBuilder: (context, index) {
-        // Verificação de bounds
         if (index >= alimentos.length) {
           return const SizedBox.shrink();
         }
@@ -298,121 +368,162 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
     );
   }
 
-  Widget _buildAlimentoCard(AlimentoSimples alimento, TextTheme textTheme) {
-    // Cor baseada na classificação nutricional
-    Color getClassificationColor() {
-      switch (alimento.classificacao) {
+  Widget _buildAlimentoCard(Alimento alimento, TextTheme textTheme) {
+    // Cor do semáforo nutricional
+    Color getSemaforoColor() {
+      switch (alimento.classificacaoCor) {
         case 'verde':
-          return AppColors.green600;
+          return AppColors.semaforoVerde;
         case 'amarelo':
-          return AppColors.warning;
+          return AppColors.semaforoAmarelo;
         case 'vermelho':
-          return AppColors.danger;
+          return AppColors.semaforoVermelho;
         default:
-          return AppColors.grey600;
+          return AppColors.grey500;
       }
     }
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12.0),
-      color: AppColors.surface,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () async {
-          // Feedback baseado na classificação nutricional
-          final feedbackService = ref.read(feedbackServiceProvider);
-          await feedbackService.semaforoFeedback(alimento.classificacao);
+    // Ícone do semáforo
+    IconData getSemaforoIcon() {
+      switch (alimento.classificacaoCor) {
+        case 'verde':
+          return Icons.thumb_up_rounded;
+        case 'amarelo':
+          return Icons.warning_rounded;
+        case 'vermelho':
+          return Icons.block_rounded;
+        default:
+          return Icons.help_rounded;
+      }
+    }
 
-          if (mounted && context.mounted) {
-            Navigator.of(context).pop(alimento);
-          }
-        },
-        child: Semantics(
-          label:
-              'Alimento ${alimento.nome}, ${alimento.calorias.toStringAsFixed(0)} calorias por 100 gramas, classificação ${alimento.classificacao}, toque para adicionar',
-          button: true,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16.0),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: getSemaforoColor().withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Semantics(
+        label: 'Alimento ${alimento.nomePopular}',
+        button: true,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
+            // Feedback específico baseado no semáforo nutricional
+            final feedbackService = ref.read(feedbackServiceProvider);
+            await feedbackService.semaforoFeedback(alimento.classificacaoCor);
+            await feedbackService.addAlimentoFeedback();
+
+            if (context.mounted) {
+              Navigator.of(context).pop(alimento);
+            }
+          },
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Row(
               children: [
-                // Avatar com indicador visual da classificação
+                // Ícone do semáforo nutricional grande
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: 60,
+                  height: 60,
                   decoration: BoxDecoration(
-                    color: AppColors.green50,
+                    color: getSemaforoColor().withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: getClassificationColor(),
-                      width: 3,
+                      color: getSemaforoColor().withOpacity(0.3),
+                      width: 2,
                     ),
                   ),
                   child: Icon(
-                    Icons.restaurant,
-                    color: getClassificationColor(),
-                    size: 24,
+                    getSemaforoIcon(),
+                    color: getSemaforoColor(),
+                    size: 28,
                   ),
                 ),
+
                 const SizedBox(width: 16),
 
-                // Conteúdo expandido
+                // Informações do alimento
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Nome do alimento
                       Text(
-                        alimento.nome,
+                        alimento.nomePopular,
                         style: textTheme.titleMedium?.copyWith(
                           color: AppColors.onSurface,
                           fontWeight: FontWeight.w600,
                           fontFamily: 'Montserrat',
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 8),
 
-                      // Calorias
-                      Text(
-                        '${alimento.calorias.toStringAsFixed(0)} kcal/100g',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.grey600,
-                          fontFamily: 'Montserrat',
-                        ),
-                      ),
-
-                      // Macronutrientes (se existirem)
-                      if (alimento.carboidratos > 0 ||
-                          alimento.proteinas > 0 ||
-                          alimento.gorduras > 0) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          'C: ${alimento.carboidratos.toStringAsFixed(1)}g | '
-                          'P: ${alimento.proteinas.toStringAsFixed(1)}g | '
-                          'G: ${alimento.gorduras.toStringAsFixed(1)}g',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: AppColors.grey600,
-                            fontFamily: 'Montserrat',
+                      // Informação nutricional em destaque
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.brown50,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              alimento.grupoDicume,
+                              style: textTheme.labelMedium?.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Montserrat',
+                              ),
+                            ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Text(
+                            alimento.igClassificacao,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.grey600,
+                              fontFamily: 'Montserrat',
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
                 ),
 
-                const SizedBox(width: 16),
-
-                // Indicador visual da classificação (semáforo)
+                // Botão de adicionar moderno
                 Container(
-                  width: 40,
-                  height: 40,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: getClassificationColor(),
-                    shape: BoxShape.circle,
+                    color: AppColors.secondary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.secondary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Icon(Icons.add, color: Colors.white, size: 24),
+                  child: Semantics(
+                    label: 'Adicionar ${alimento.nomePopular} ao prato',
+                    button: true,
+                    child: const Icon(
+                      Icons.add_rounded,
+                      color: AppColors.onSecondary,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ],
             ),

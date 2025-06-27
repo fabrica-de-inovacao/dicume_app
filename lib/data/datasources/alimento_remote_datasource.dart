@@ -3,7 +3,7 @@ import '../models/alimento_model.dart';
 import '../../core/constants/api_endpoints.dart';
 
 abstract class AlimentoRemoteDataSource {
-  Future<List<AlimentoModel>> getAllAlimentos(String token);
+  Future<List<AlimentoModel>> getAllAlimentos();
 }
 
 class AlimentoRemoteDataSourceImpl implements AlimentoRemoteDataSource {
@@ -12,13 +12,12 @@ class AlimentoRemoteDataSourceImpl implements AlimentoRemoteDataSource {
   AlimentoRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<AlimentoModel>> getAllAlimentos(String token) async {
+  Future<List<AlimentoModel>> getAllAlimentos() async {
     try {
       final response = await dio.get(
         ApiEndpoints.dadosAlimentos,
         options: Options(
           headers: {
-            ApiEndpoints.authorizationHeader: ApiEndpoints.bearerToken(token),
             ApiEndpoints.contentTypeHeader: ApiEndpoints.jsonContentType,
             ApiEndpoints.acceptHeader: ApiEndpoints.jsonAccept,
           },

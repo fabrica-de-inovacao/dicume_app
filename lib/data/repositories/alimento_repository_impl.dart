@@ -28,8 +28,16 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   getAllAlimentos() async {
     try {
       final alimentosDb = await databaseService.getAllAlimentos();
-      final alimentos = alimentosDb.map(_alimentoFromDb).toList();
-      return Right(alimentos);
+      final alimentos =
+          alimentosDb.map((alimentoDb) async {
+            // Tenta recuperar o UUID original
+            final originalId = await _getOriginalId(alimentoDb.id);
+            return _alimentoFromDb(alimentoDb, originalId: originalId);
+          }).toList();
+
+      // Aguarda todos os futures serem resolvidos
+      final alimentosResolved = await Future.wait(alimentos);
+      return Right(alimentosResolved);
     } catch (e) {
       return Left(CacheFailure('Erro ao obter alimentos do cache: $e'));
     }
@@ -75,23 +83,27 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
 
   @override
   Future<Either<CacheFailure, entities.Alimento?>> getAlimentoById(
-    int id,
+    String id,
   ) async {
     try {
-      final alimentoDb = await databaseService.getAlimentoById(id);
+      // Converte String UUID para int temporariamente
+      final intId = _stringToIntId(id);
+      final alimentoDb = await databaseService.getAlimentoById(intId);
       if (alimentoDb == null) {
         return const Right(null);
       }
-      return Right(_alimentoFromDb(alimentoDb));
+      return Right(_alimentoFromDb(alimentoDb, originalId: id));
     } catch (e) {
       return Left(CacheFailure('Erro ao obter alimento por ID: $e'));
     }
   }
 
   @override
-  Future<Either<CacheFailure, bool>> toggleFavorito(int alimentoId) async {
+  Future<Either<CacheFailure, bool>> toggleFavorito(String alimentoId) async {
     try {
-      final alimentoDb = await databaseService.getAlimentoById(alimentoId);
+      // Converte String UUID para int temporariamente
+      final intId = _stringToIntId(alimentoId);
+      final alimentoDb = await databaseService.getAlimentoById(intId);
       if (alimentoDb == null) {
         return Left(CacheFailure('Alimento não encontrado'));
       }
@@ -117,24 +129,23 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
         return Left(CacheFailure('Sem conexão com a internet'));
       }
 
-      // Obtém token de autenticação
-      final token = await authLocalDataSource.getCachedToken();
-      if (token == null) {
-        return Left(CacheFailure('Token de autenticação não encontrado'));
-      }
-
-      // Busca alimentos da API
-      final alimentosModel = await remoteDataSource.getAllAlimentos(
-        token.accessToken,
-      );
+      // Busca alimentos da API (sem autenticação necessária)
+      final alimentosModel = await remoteDataSource.getAllAlimentos();
 
       // Limpa cache atual
       await databaseService.clearAlimentos();
 
       // Salva novos alimentos no cache
       int count = 0;
+      final Map<String, int> idMapping = {}; // Mapeia UUID para int
+
       for (final alimentoModel in alimentosModel) {
+        // Converte UUID string para int único
+        final intId = _stringToIntId(alimentoModel.id);
+        idMapping[alimentoModel.id] = intId;
+
         final alimentoCompanion = AlimentosCompanion.insert(
+          id: Value(intId), // Usa o ID convertido
           nome: alimentoModel.nomePopular,
           categoria: alimentoModel.grupoDicume,
           carboidratos: 0.0, // Dados nutricionais não disponíveis na API ainda
@@ -147,6 +158,9 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
         await databaseService.insertAlimento(alimentoCompanion);
         count++;
       }
+
+      // Salva o mapeamento de IDs
+      await _saveIdMapping(idMapping);
 
       // Atualiza timestamp do cache
       await _updateCacheTimestamp();
@@ -187,9 +201,12 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   }
   // Métodos auxiliares
 
-  entities.Alimento _alimentoFromDb(Alimento alimentoDb) {
+  entities.Alimento _alimentoFromDb(Alimento alimentoDb, {String? originalId}) {
+    // Se temos o ID original (UUID), usa ele; senão converte o int para string
+    final alimentoId = originalId ?? alimentoDb.id.toString();
+
     return entities.Alimento(
-      id: alimentoDb.id,
+      id: alimentoId,
       nomePopular: alimentoDb.nome,
       grupoDicume: alimentoDb.categoria,
       classificacaoCor: 'verde', // Será implementado depois com dados reais
@@ -202,6 +219,29 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
       createdAt: alimentoDb.createdAt,
       updatedAt: alimentoDb.updatedAt,
     );
+  }
+
+  /// Converte UUID string para int usando hash
+  int _stringToIntId(String uuid) {
+    return uuid.hashCode.abs();
+  }
+
+  /// Salva mapeamento de UUID para int no cache
+  Future<void> _saveIdMapping(Map<String, int> mapping) async {
+    final mappingJson = mapping.map(
+      (key, value) => MapEntry(key, value.toString()),
+    );
+    for (final entry in mappingJson.entries) {
+      await databaseService.setCacheValue(
+        'id_mapping_${entry.value}',
+        entry.key,
+      );
+    }
+  }
+
+  /// Recupera UUID original a partir do int ID
+  Future<String?> _getOriginalId(int intId) async {
+    return await databaseService.getCacheValue('id_mapping_$intId');
   }
 
   Future<void> _updateCacheTimestamp() async {

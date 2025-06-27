@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1096626549217",
+    "project_id": "dicume-463318",
+    "storage_bucket": "dicume-463318.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1096626549217:android:5b543cc97c7c0ed30162a0",
+        "android_client_info": {
+          "package_name": "com.dicume.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1096626549217-m2n4acurlknhrku1f43imbjqdo0h2bpa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dicume.app",
+            "certificate_hash": "b89ab3c0367e31be8dcd737cec537b043db7d9e4"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBQmFu5-iCoNU2OSo3qyhkdoZqzcyV15LY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1096626549217-kvu38j75u95kfkdtopc4jtue6trv4g4f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.dicume.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

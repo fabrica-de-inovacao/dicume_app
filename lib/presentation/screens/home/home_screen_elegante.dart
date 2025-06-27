@@ -1,0 +1,1057 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/dicume_elegant_components.dart';
+import '../../../core/services/feedback_service.dart';
+import '../../../core/services/mock_data_service_regional.dart';
+import '../../../core/router/app_router.dart';
+import '../../../core/utils/auth_utils.dart';
+import '../../controllers/auth_controller.dart';
+
+class HomeScreenElegante extends ConsumerStatefulWidget {
+  const HomeScreenElegante({super.key});
+
+  @override
+  ConsumerState<HomeScreenElegante> createState() => _HomeScreenEleganteState();
+}
+
+class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
+  final mockService = SuperMockDataService();
+  late Map<String, int> estatisticasSemaforo;
+  late Map<String, int> semaforoHoje; // Representa o status do dia atual
+
+  // Para área de desenvolvedor
+  int _tapCount = 0;
+  DateTime? _lastTapTime;
+
+  @override
+  void initState() {
+    super.initState();
+    estatisticasSemaforo = mockService.getEstatisticasSemaforo();
+    // Simula o semáforo do dia atual (seria baseado no histórico real)
+    semaforoHoje = _simularSemaforoDia();
+  }
+
+  // Simula as refeições do dia para mostrar o semáforo atual
+  Map<String, int> _simularSemaforoDia() {
+    // Seria substituído por dados reais do histórico
+    return {
+      'verde': 5, // 5 alimentos verdes consumidos hoje
+      'amarelo': 2, // 2 alimentos amarelos
+      'vermelho': 1, // 1 alimento vermelho
+      'total': 8,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
+    final authState = ref.watch(authControllerProvider);
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (!didPop) {
+          _mostrarConfirmacaoSaida(context);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Cabeçalho com avatar do usuário
+                _buildCabecalhoUsuario(textTheme, authState),
+                const SizedBox(height: 24),
+
+                // Saudação e mensagem amigável
+                _buildSaudacao(textTheme),
+                const SizedBox(height: 24),
+
+                // PRIORIDADE 1: Semáforo do dia (logo após saudação)
+                _buildSemaforoEstatisticas(textTheme),
+                const SizedBox(height: 24),
+
+                // PRIORIDADE 2: Card CTA principal (DESTACADO)
+                _buildCardCTADestacado(context, textTheme),
+                const SizedBox(height: 24),
+
+                // Atalho "Seu Dia Hoje"
+                _buildAtalhoMeuDia(textTheme),
+                const SizedBox(height: 24),
+
+                // Dicas rápidas
+                _buildDicasRapidas(textTheme), const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaudacao(TextTheme textTheme) {
+    return DicumeElegantCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.successLight,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.waving_hand,
+                  color: AppColors.success,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    GestureDetector(
+                      onTap: _handleDeveloperTap,
+                      child: Text(
+                        'Oi, que bom te ver!',
+                        style: textTheme.titleLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Vamos montar um prato saudável hoje?',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'O DICUMÊ te ajuda a controlar o índice glicêmico dos alimentos! Verde para baixo IG (pode à vontade), amarelo para moderado (com equilíbrio), vermelho para alto IG (só um pouquinho).',
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCardCTADestacado(BuildContext context, TextTheme textTheme) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: 0.8 + (0.2 * value),
+          child: Container(
+            height: 200, // Mais altura para destaque
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary,
+                  AppColors.primaryDark,
+                  Color(0xFF4A6CF7), // Tom mais vibrante
+                ],
+                stops: [0.0, 0.6, 1.0],
+              ),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+                BoxShadow(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () async {
+                  await FeedbackService().strongTap(); // Feedback mais forte
+                  if (mounted) {
+                    // Verificar se o usuário está autenticado
+                    final isAuthenticated = await AuthUtils.requireAuthentication(
+                      context,
+                      ref,
+                      message:
+                          'Para montar um prato e salvá-lo, você precisa estar logado.',
+                    );
+
+                    if (isAuthenticated && mounted) {
+                      context.go(AppRoutes.montarPratoVirtual);
+                    }
+                  }
+                },
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Row(
+                    children: [
+                      // Ícone animado com pulso
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.8, end: 1.2),
+                        duration: const Duration(milliseconds: 1500),
+                        curve: Curves.easeInOut,
+                        builder: (context, scale, child) {
+                          return Transform.scale(
+                            scale: scale,
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: AppColors.onPrimary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(24),
+                                border: Border.all(
+                                  color: AppColors.onPrimary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  width: 2,
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.restaurant_menu,
+                                size: 52,
+                                color: AppColors.onPrimary,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 20), // Textos
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Título com shimmer effect
+                            ShaderMask(
+                              shaderCallback:
+                                  (bounds) => const LinearGradient(
+                                    colors: [
+                                      Colors.white,
+                                      Color(0xFFF0F8FF),
+                                      Colors.white,
+                                    ],
+                                    stops: [0.0, 0.5, 1.0],
+                                  ).createShader(bounds),
+                              child: Text(
+                                'Bora Montar\no Prato!',
+                                style: textTheme.headlineLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                  fontSize: 28,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+
+                            // Subtítulo motivacional
+                            Text(
+                              'Crie um prato saudável e\nbalanceado agora mesmo',
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppColors.onPrimary.withValues(
+                                  alpha: 0.9,
+                                ),
+                                height: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+
+                            // Badge motivacional
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.onPrimary.withValues(
+                                  alpha: 0.2,
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: AppColors.onPrimary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.flash_on,
+                                    size: 14,
+                                    color: AppColors.onPrimary,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Rápido e fácil',
+                                    style: textTheme.bodySmall?.copyWith(
+                                      color: AppColors.onPrimary,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSemaforoEstatisticas(TextTheme textTheme) {
+    // Calcula o status geral do dia baseado no índice glicêmico
+    String statusDia = _calcularStatusDia();
+    Color corStatus = _getCorStatus(statusDia);
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value.clamp(0.0, 1.0),
+            child: DicumeElegantCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header com animação
+                  Row(
+                    children: [
+                      // Semáforo com pulso
+                      TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.9, end: 1.1),
+                        duration: const Duration(milliseconds: 2000),
+                        curve: Curves.easeInOut,
+                        builder: (context, scale, child) {
+                          return Transform.scale(
+                            scale: scale,
+                            child: DicumeSemaforoNutricional(
+                              nivel: statusDia,
+                              descricao: _getDescricaoStatus(statusDia),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 16),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Título com destaque
+                            Text(
+                              'Seu Dia Hoje',
+                              style: textTheme.titleLarge?.copyWith(
+                                color: AppColors.textPrimary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+
+                            // Status com cor dinâmica
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: corStatus.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                  color: corStatus.withValues(alpha: 0.3),
+                                ),
+                              ),
+                              child: Text(
+                                _getDescricaoStatus(statusDia),
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: corStatus,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Grid de estatísticas com animação
+                  Row(
+                    children:
+                        semaforoHoje.entries.where((e) => e.key != 'total').map(
+                          (entry) {
+                            Color cor = _getCorSemaforo(entry.key);
+                            return Expanded(
+                              child: TweenAnimationBuilder<double>(
+                                tween: Tween(
+                                  begin: 0.0,
+                                  end: entry.value.toDouble(),
+                                ),
+                                duration: Duration(
+                                  milliseconds:
+                                      800 +
+                                      (semaforoHoje.keys.toList().indexOf(
+                                            entry.key,
+                                          ) *
+                                          200),
+                                ),
+                                curve: Curves.elasticOut,
+                                builder: (context, animatedValue, child) {
+                                  return Container(
+                                    margin: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                    ),
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: cor.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: cor.withValues(alpha: 0.3),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        // Contador animado
+                                        Text(
+                                          animatedValue.toInt().toString(),
+                                          style: textTheme.headlineMedium
+                                              ?.copyWith(
+                                                color: cor,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                        const SizedBox(height: 4),
+
+                                        // Label
+                                        Text(
+                                          entry.key.toUpperCase(),
+                                          style: textTheme.bodySmall?.copyWith(
+                                            color: cor,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        ).toList(),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Progresso visual
+                  Container(
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: AppColors.grey200,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: const Duration(milliseconds: 1200),
+                        curve: Curves.easeInOut,
+                        builder: (context, progress, child) {
+                          return Row(
+                            children: [
+                              if (semaforoHoje['verde']! > 0)
+                                Expanded(
+                                  flex:
+                                      (semaforoHoje['verde']! * progress)
+                                          .toInt(),
+                                  child: Container(color: AppColors.success),
+                                ),
+                              if (semaforoHoje['amarelo']! > 0)
+                                Expanded(
+                                  flex:
+                                      (semaforoHoje['amarelo']! * progress)
+                                          .toInt(),
+                                  child: Container(color: AppColors.warning),
+                                ),
+                              if (semaforoHoje['vermelho']! > 0)
+                                Expanded(
+                                  flex:
+                                      (semaforoHoje['vermelho']! * progress)
+                                          .toInt(),
+                                  child: Container(color: AppColors.error),
+                                ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Texto motivacional
+                  Center(
+                    child: Text(
+                      'Total: ${semaforoHoje['total']} alimentos hoje',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getCorSemaforo(String semaforo) {
+    switch (semaforo) {
+      case 'verde':
+        return AppColors.success;
+      case 'amarelo':
+        return AppColors.warning;
+      case 'vermelho':
+        return AppColors.error;
+      default:
+        return AppColors.grey400;
+    }
+  }
+
+  Widget _buildDicasRapidas(TextTheme textTheme) {
+    final dicas = [
+      {
+        'icone': Icons.lightbulb_outline,
+        'titulo': 'Dica do Dia',
+        'texto':
+            'Comece sempre com os alimentos verdes - eles podem ser consumidos à vontade!',
+        'cor': AppColors.success,
+      },
+      {
+        'icone': Icons.favorite_outline,
+        'titulo': 'Alimentação Regional',
+        'texto':
+            'Priorizamos alimentos típicos do Nordeste, frescos e nutritivos da nossa terra!',
+        'cor': AppColors.primary,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Dicas Rápidas',
+          style: textTheme.titleMedium?.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...dicas.map(
+          (dica) => Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            child: DicumeElegantCard(
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: (dica['cor'] as Color).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      dica['icone'] as IconData,
+                      color: dica['cor'] as Color,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          dica['titulo'] as String,
+                          style: textTheme.titleSmall?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          dica['texto'] as String,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCabecalhoUsuario(TextTheme textTheme, AuthState authState) {
+    // Obter nome do usuário ou usar padrão
+    final nomeUsuario = authState.user?.nome ?? 'Usuário DICUMÊ';
+    final primeiroNome = nomeUsuario.split(' ').first;
+
+    // Gerar iniciais do usuário
+    final iniciais = _gerarIniciais(nomeUsuario);
+
+    // Gerar saudação baseada no horário
+    final saudacao = _getSaudacaoHorario();
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Informações do usuário
+        Row(
+          children: [
+            GestureDetector(
+              onTap: () {
+                FeedbackService().lightTap();
+                context.go('/perfil-usuario');
+              },
+              child: CircleAvatar(
+                radius: 24,
+                backgroundColor: AppColors.primaryLight,
+                child: Text(
+                  iniciais,
+                  style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  primeiroNome,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                Text(
+                  saudacao,
+                  style: textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+
+        // Botão de notificações
+        IconButton(
+          onPressed: () {
+            FeedbackService().lightTap();
+            // TODO: Abrir notificações
+          },
+          icon: const Icon(
+            Icons.notifications_outlined,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAtalhoMeuDia(TextTheme textTheme) {
+    return DicumeElegantCard(
+      child: InkWell(
+        onTap: () async {
+          FeedbackService().mediumTap();
+
+          // Verificar se o usuário está autenticado
+          final isAuthenticated = await AuthUtils.requireAuthentication(
+            context,
+            ref,
+            message:
+                'Para ver o histórico personalizado do seu dia, você precisa estar logado.',
+          );
+
+          if (isAuthenticated && mounted) {
+            context.go('/meu-dia');
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.today,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Seu Dia Hoje',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Veja todas as suas refeições de hoje',
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Resumo rápido do dia
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.surface.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  _buildResumoIndicador(
+                    cor: AppColors.success,
+                    valor: semaforoHoje['verde']!,
+                    label: 'Verde',
+                  ),
+                  const SizedBox(width: 16),
+                  _buildResumoIndicador(
+                    cor: AppColors.warning,
+                    valor: semaforoHoje['amarelo']!,
+                    label: 'Amarelo',
+                  ),
+                  const SizedBox(width: 16),
+                  _buildResumoIndicador(
+                    cor: AppColors.error,
+                    valor: semaforoHoje['vermelho']!,
+                    label: 'Vermelho',
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${semaforoHoje['total']} alimentos',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResumoIndicador({
+    required Color cor,
+    required int valor,
+    required String label,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: cor, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$valor',
+          style: TextStyle(
+            color: cor,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _calcularStatusDia() {
+    final total = semaforoHoje['total']!;
+    final verdes = semaforoHoje['verde']!;
+    final vermelhos = semaforoHoje['vermelho']!;
+
+    if (total == 0) return 'verde'; // Dia começando
+
+    final percentualVerde = verdes / total;
+    final percentualVermelho = vermelhos / total;
+
+    if (percentualVermelho > 0.3)
+      return 'vermelho'; // Muitos alimentos de alto IG
+    if (percentualVerde >= 0.6) return 'verde'; // Maioria de baixo IG
+    return 'amarelo'; // Moderado
+  }
+
+  Color _getCorStatus(String status) {
+    switch (status) {
+      case 'verde':
+        return AppColors.success;
+      case 'amarelo':
+        return AppColors.warning;
+      case 'vermelho':
+        return AppColors.error;
+      default:
+        return AppColors.success;
+    }
+  }
+
+  String _getDescricaoStatus(String status) {
+    switch (status) {
+      case 'verde':
+        return 'Excelente dia! 🌟';
+      case 'amarelo':
+        return 'Bom dia! 👍';
+      case 'vermelho':
+        return 'Atenção hoje 🚨';
+      default:
+        return 'Excelente dia! 🌟';
+    }
+  }
+
+  void _mostrarConfirmacaoSaida(BuildContext context) {
+    FeedbackService().mediumTap();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder:
+          (context) => Container(
+            padding: const EdgeInsets.all(24),
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Indicador de arrastar
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.grey300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Ícone
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.exit_to_app,
+                    color: AppColors.warning,
+                    size: 32,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Título
+                Text(
+                  'Sair do DICUMÊ?',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Descrição
+                Text(
+                  'Tem certeza que deseja sair do aplicativo? Seus dados estão salvos e você pode voltar a qualquer momento!',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 32), // Botões
+                Row(
+                  children: [
+                    // Botão Cancelar
+                    Expanded(
+                      child: DicumeElegantButton(
+                        onPressed: () {
+                          FeedbackService().lightTap();
+                          Navigator.of(context).pop();
+                        },
+                        text: 'Cancelar',
+                        isOutlined: true,
+                      ),
+                    ),
+                    const SizedBox(width: 16), // Botão Sair
+                    Expanded(
+                      child: DicumeElegantButton(
+                        onPressed: () {
+                          FeedbackService().strongTap();
+                          Navigator.of(context).pop();
+                          // Sair do app
+                          SystemNavigator.pop();
+                        },
+                        text: 'Sair',
+                        isSecondary: true,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+    );
+  }
+
+  void _handleDeveloperTap() {
+    // Só funciona em modo debug
+    if (!kDebugMode) return;
+
+    final now = DateTime.now();
+
+    // Reset se passou mais de 2 segundos desde o último tap
+    if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 2) {
+      _tapCount = 1;
+    } else {
+      _tapCount++;
+    }
+
+    _lastTapTime = now;
+
+    // Se chegou a 5 taps, abre a área de desenvolvedor
+    if (_tapCount >= 5) {
+      _tapCount = 0;
+      _lastTapTime = null;
+
+      FeedbackService().strongTap();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🧑‍💻 Área de desenvolvedor ativada!'),
+          backgroundColor: AppColors.error,
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      context.go(AppRoutes.developer);
+    } else if (_tapCount >= 3) {
+      // Dica visual após 3 taps
+      FeedbackService().mediumTap();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('🔓 Continue... (${_tapCount}/5)'),
+          backgroundColor: AppColors.primary,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  // Métodos auxiliares para dados do usuário
+  String _gerarIniciais(String nomeCompleto) {
+    if (nomeCompleto.isEmpty) return 'U';
+
+    final palavras = nomeCompleto.trim().split(' ');
+
+    if (palavras.length == 1) {
+      return palavras[0].substring(0, 1).toUpperCase();
+    }
+
+    return '${palavras[0].substring(0, 1)}${palavras[palavras.length - 1].substring(0, 1)}'
+        .toUpperCase();
+  }
+
+  String _getSaudacaoHorario() {
+    final agora = DateTime.now();
+    final hora = agora.hour;
+
+    if (hora >= 5 && hora < 12) {
+      return 'Bom dia! ☀️';
+    } else if (hora >= 12 && hora < 18) {
+      return 'Boa tarde! 🌤️';
+    } else {
+      return 'Boa noite! 🌙';
+    }
+  }
+}

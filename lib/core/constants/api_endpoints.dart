@@ -1,7 +1,7 @@
 class ApiEndpoints {
   // Base URLs
-  static const String baseUrl = 'https://api.dicume.com/api/v1';
-  static const String baseUrlDev = 'http://localhost:3000/api/v1';
+  static const String baseUrl = 'http://189.90.44.226:5050/api/v1';
+  static const String baseUrlDev = 'http://189.90.44.226:5050/api/v1';
 
   // Health Check
   static const String healthCheck = '/';

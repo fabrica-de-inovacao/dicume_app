@@ -18,10 +18,10 @@ abstract class AlimentoRepository {
   Future<Either<CacheFailure, List<Alimento>>> getFavoritosAlimentos();
 
   /// Obtém um alimento específico por ID
-  Future<Either<CacheFailure, Alimento?>> getAlimentoById(int id);
+  Future<Either<CacheFailure, Alimento?>> getAlimentoById(String id);
 
   /// Marca/desmarca alimento como favorito
-  Future<Either<CacheFailure, bool>> toggleFavorito(int alimentoId);
+  Future<Either<CacheFailure, bool>> toggleFavorito(String alimentoId);
 
   /// Sincroniza alimentos da API para o cache local
   Future<Either<CacheFailure, int>> syncAlimentosFromAPI();

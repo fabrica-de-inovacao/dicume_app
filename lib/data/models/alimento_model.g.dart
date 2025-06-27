@@ -8,7 +8,7 @@ part of 'alimento_model.dart';
 
 AlimentoModel _$AlimentoModelFromJson(Map<String, dynamic> json) =>
     AlimentoModel(
-      id: (json['id'] as num).toInt(),
+      id: json['id'] as String,
       nomePopular: json['nome_popular'] as String,
       grupoDicume: json['grupo_dicume'] as String,
       classificacaoCor: json['classificacao_cor'] as String,
