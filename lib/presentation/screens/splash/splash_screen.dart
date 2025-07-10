@@ -1,73 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/constants/animation_constants.dart';
-import '../../../core/router/app_router.dart';
-import '../../../core/services/auth_service.dart';
-import '../../../core/services/http_service.dart';
 
-class SplashScreen extends ConsumerStatefulWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends ConsumerState<SplashScreen> {
-  bool _hasNavigated = false;
-
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkAuthAndNavigate();
+    _navigateToNextScreen();
   }
 
-  void _checkAuthAndNavigate() async {
-    // Aguarda um tempo mínimo para mostrar a splash screen
+  void _navigateToNextScreen() async {
     await Future.delayed(AnimationConstants.splashDuration);
 
-    if (!mounted || _hasNavigated) return;
-
-    try {
-      // Inicializar apenas HttpService (AuthService já foi inicializado no main)
-      HttpService().initialize();
-
-      // Verificar se é o primeiro lançamento
-      final authService = AuthService();
-      final isFirstLaunch = await authService.isFirstLaunch();
-
-      debugPrint('🔥 [SPLASH] isFirstLaunch: $isFirstLaunch');
-
-      if (isFirstLaunch) {
-        // Primeira vez abrindo o app
-        debugPrint('🔥 [SPLASH] Navegando para onboarding...');
-        context.go(AppRoutes.onboarding);
-        return;
-      }
-
-      // Verificar se está logado
-      final isLoggedIn = await authService.isLoggedIn();
-      debugPrint('🔥 [SPLASH] isLoggedIn: $isLoggedIn');
-
-      if (isLoggedIn) {
-        // Usuário logado, ir direto para home
-        debugPrint('🔥 [SPLASH] Navegando para home (logado)...');
-        context.go(AppRoutes.home);
-      } else {
-        // Usuário não logado, ir para home (modo guest)
-        debugPrint('🔥 [SPLASH] Navegando para home (guest)...');
-        context.go(AppRoutes.home);
-      }
-    } catch (e) {
-      debugPrint('🔥 [SPLASH] Erro: $e');
-      // Em caso de erro, ir para home
-      context.go(AppRoutes.home);
-    } finally {
-      _hasNavigated = true;
+    if (mounted) {
+      // TODO: Verificar se usuário está logado
+      // Por enquanto, vai direto para uma tela temporária
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder:
+              (context, animation, secondaryAnimation) =>
+                  const TemporaryHomeScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+        ),
+      );
     }
   }
 
@@ -170,4 +137,68 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
   }
 }
 
-// Tela temporária para testar o setup (removida pois não é mais necessária)
+// Tela temporária para testar o setup
+class TemporaryHomeScreen extends StatelessWidget {
+  const TemporaryHomeScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('DICUMÊ Setup Completo!')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle,
+              size: 120,
+              color: AppColors.semaforoVerde,
+            ).animate().scale(
+              duration: AnimationConstants.slowAnimation,
+              curve: Curves.elasticOut,
+            ),
+
+            const SizedBox(height: 32),
+
+            Text(
+              '🎉 Checkpoint 1.1 Completo!',
+              style: AppTextStyles.screenTitle,
+              textAlign: TextAlign.center,
+            ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.3, end: 0),
+
+            const SizedBox(height: 16),
+
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                '✅ Flutter com FVM configurado\n'
+                '✅ Estrutura Clean Architecture\n'
+                '✅ Dependências instaladas\n'
+                '✅ Tema maranhense aplicado\n'
+                '✅ Riverpod configurado\n'
+                '✅ Animações funcionando',
+                style: AppTextStyles.textTheme.bodyLarge,
+                textAlign: TextAlign.center,
+              ),
+            ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.3, end: 0),
+
+            const SizedBox(height: 32),
+
+            ElevatedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Pronto para o próximo checkpoint! 🚀'),
+                    backgroundColor: AppColors.semaforoVerde,
+                  ),
+                );
+              },
+              icon: Icon(Icons.rocket_launch),
+              label: Text('Próximo Checkpoint'),
+            ).animate(delay: 600.ms).fadeIn().scale(curve: Curves.elasticOut),
+          ],
+        ),
+      ),
+    );
+  }
+}

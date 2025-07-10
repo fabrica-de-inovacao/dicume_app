@@ -164,11 +164,10 @@ class AuthUtils {
 
                                     // Salvar dados do usuário e token
                                     await authService.saveUserData(
-                                      authResponse.usuario.toJson(),
+                                      authResponse.toJson(),
                                     );
-                                    await authService.saveToken(
-                                      authResponse.token,
-                                    );
+                                    // await authService.saveToken(
+                                    // );
 
                                     // Fechar loading
                                     if (context.mounted) {
@@ -178,7 +177,7 @@ class AuthUtils {
                                       ).showSnackBar(
                                         SnackBar(
                                           content: Text(
-                                            'Bem-vindo, ${authResponse.usuario.nome}!',
+                                            'Bem-vindo, ${authResponse.nome}!',
                                           ),
                                           backgroundColor: AppColors.success,
                                         ),

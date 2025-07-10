@@ -1,11 +1,10 @@
 import 'package:dio/dio.dart';
 import '../models/user_model.dart';
 import '../models/auth_model.dart';
-import '../models/auth_response_model.dart';
 import '../../core/constants/api_endpoints.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<AuthResponseModel> signInWithGoogle(String googleToken);
+  Future<UserModel> signInWithGoogle(String googleToken);
   Future<SMSCodeResponseModel> requestSMSCode(String phoneNumber);
   Future<UserModel> verifyAndSignInWithSMS(SMSVerificationRequestModel request);
   Future<void> signOut(String token);
@@ -19,16 +18,15 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   AuthRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<AuthResponseModel> signInWithGoogle(String googleToken) async {
+  Future<UserModel> signInWithGoogle(String googleToken) async {
     try {
-      // Enviar apenas o idToken diretamente para a API DICUMÊ
       final response = await dio.post(
         ApiEndpoints.loginGoogle,
-        data: googleToken, // Apenas o idToken, não um objeto
+        data: {'provider': 'google', 'credential': googleToken},
       );
 
       if (response.statusCode == 200) {
-        return AuthResponseModel.fromJson(response.data);
+        return UserModel.fromJson(response.data['user']);
       } else {
         throw DioException(
           requestOptions: response.requestOptions,

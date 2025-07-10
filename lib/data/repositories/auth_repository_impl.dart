@@ -48,36 +48,20 @@ class AuthRepositoryImpl implements AuthRepository {
       // Obtém o token de autenticação do Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+      final String? googleToken = googleAuth.accessToken;
 
-      // 🔑 IMPORTANTE: Usar idToken (não accessToken) para enviar à API DICUMÊ
-      final String? googleIdToken = googleAuth.idToken;
-
-      if (googleIdToken == null) {
+      if (googleToken == null) {
         return const Left(
-          GoogleSignInFailure('ID Token do Google não disponível'),
+          GoogleSignInFailure('Token do Google não disponível'),
         );
       }
 
-      // Envia o ID TOKEN para nossa API DICUMÊ
-      final authResponse = await remoteDataSource.signInWithGoogle(
-        googleIdToken,
-      );
-      final user = authResponse.usuario.toEntity();
+      // Envia o token para nossa API
+      final userModel = await remoteDataSource.signInWithGoogle(googleToken);
+      final user = userModel.toEntity();
 
-      // Cache local do usuário
-      await localDataSource.cacheUser(authResponse.usuario);
-
-      // Cache local do token
-      final tokenModel = AuthTokenModel(
-        accessToken: authResponse.token,
-        refreshToken: '', // API não retorna refresh token ainda
-        tokenType: 'Bearer',
-        expiresAt:
-            DateTime.now()
-                .add(const Duration(days: 7))
-                .toIso8601String(), // Assumindo 7 dias
-      );
-      await localDataSource.cacheToken(tokenModel);
+      // Cache local
+      await localDataSource.cacheUser(userModel);
 
       // Emite mudança no estado de autenticação
       _authStateController.add(user);
