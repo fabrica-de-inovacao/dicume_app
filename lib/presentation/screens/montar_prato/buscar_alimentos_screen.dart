@@ -112,12 +112,20 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   Timer? _debounceTimer;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void dispose() {
     _searchController.dispose();
     _debounceTimer?.cancel();
+    _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Poderíamos ajustar comportamento do ScrollController aqui, se necessário
   }
 
   void _onSearchChanged(String value) {
@@ -141,7 +149,6 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final alimentosAsync = ref.watch(buscarAlimentosProvider(_searchQuery));
-    final feedbackService = ref.watch(feedbackServiceProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -151,31 +158,8 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
         backgroundColor: AppColors.surface,
         elevation: 0,
         centerTitle: true,
-        leading: Semantics(
-          label: 'Botão voltar',
-          button: true,
-          child: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.brown50,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            onPressed: () async {
-              // Feedback tátil e sonoro ao voltar
-              await feedbackService.backFeedback();
-              if (context.mounted) {
-                Navigator.of(context).pop();
-              }
-            },
-          ),
-        ),
+        // Não exibir o botão de voltar — navegação via barra inferior
+        automaticallyImplyLeading: false,
         title: Text(
           'Buscar Comidas',
           style: textTheme.titleLarge?.copyWith(
@@ -197,7 +181,7 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.1),
+                    color: AppColors.primary.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -325,7 +309,7 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.secondary.withOpacity(0.2),
+                    color: AppColors.secondary.withValues(alpha: 0.2),
                     blurRadius: 25,
                     offset: const Offset(0, 10),
                   ),
@@ -381,10 +365,10 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
               width: 120,
               height: 120,
               decoration: BoxDecoration(
-                color: AppColors.warning.withOpacity(0.1),
+                color: AppColors.warning.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.warning.withOpacity(0.3),
+                  color: AppColors.warning.withValues(alpha: 0.3),
                   width: 2,
                 ),
               ),
@@ -426,17 +410,53 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
       return _buildNoResultsState(textTheme);
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-      itemCount: alimentos.length,
-      itemBuilder: (context, index) {
-        if (index >= alimentos.length) {
-          return const SizedBox.shrink();
-        }
+    return RefreshIndicator(
+      onRefresh: () async {
+        // Tenta sincronizar com a API e depois força a requisição do provider
+        final repo = ref.read(alimentoRepositoryProvider);
+        final result = await repo.syncAlimentosFromAPI();
+        result.fold(
+          (failure) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Erro ao atualizar alimentos: ${failure.message}',
+                  ),
+                ),
+              );
+            }
+          },
+          (count) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Atualizados $count alimentos')),
+              );
+            }
+          },
+        );
 
-        final alimento = alimentos[index];
-        return _buildAlimentoCard(alimento, textTheme);
+        // Força o provider de busca a refazer a consulta
+        ref.invalidate(buscarAlimentosProvider(_searchQuery));
       },
+      child: Scrollbar(
+        controller: _scrollController,
+        thumbVisibility: true,
+        radius: const Radius.circular(8),
+        child: ListView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+          itemCount: alimentos.length,
+          itemBuilder: (context, index) {
+            if (index >= alimentos.length) {
+              return const SizedBox.shrink();
+            }
+
+            final alimento = alimentos[index];
+            return _buildAlimentoCard(alimento, textTheme);
+          },
+        ),
+      ),
     );
   }
 
@@ -476,7 +496,7 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: getSemaforoColor().withOpacity(0.1),
+            color: getSemaforoColor().withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -537,27 +557,33 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
 
                 const SizedBox(width: 12),
 
-                // Botão de adicionar moderno
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.secondary.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                // Botão de adicionar moderno mais discreto (tamanho fixo)
+                Semantics(
+                  label: 'Adicionar ${alimento.nomePopular} ao prato',
+                  button: true,
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        final feedbackService = ref.read(
+                          feedbackServiceProvider,
+                        );
+                        await feedbackService.addAlimentoFeedback();
+                        if (context.mounted) {
+                          Navigator.of(context).pop(alimento);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.secondary,
+                        foregroundColor: AppColors.onSecondary,
+                        padding: EdgeInsets.zero,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 4,
                       ),
-                    ],
-                  ),
-                  child: Semantics(
-                    label: 'Adicionar ${alimento.nomePopular} ao prato',
-                    button: true,
-                    child: const Icon(
-                      Icons.add_rounded,
-                      color: AppColors.onSecondary,
-                      size: 24,
+                      child: const Icon(Icons.add_rounded, size: 20),
                     ),
                   ),
                 ),
@@ -576,41 +602,84 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
   ) {
     final imageUrl = AlimentoDisplayHelper.getImageUrl(alimento.fotoPorcaoUrl);
 
+    // Usar Hero na miniatura para permitir transição para preview
+    final heroTag = 'alimento_image_${alimento.id}';
+
     return Container(
-      width: 60,
-      height: 60,
+      width: 68,
+      height: 68,
       decoration: BoxDecoration(
-        color: semaforoColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: semaforoColor.withOpacity(0.3), width: 2),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child:
-            imageUrl.isNotEmpty
-                ? Image.network(
-                  imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Se der erro ao carregar a imagem, mostra o ícone
-                    return Icon(semaforoIcon, color: semaforoColor, size: 28);
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value:
-                            loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded /
-                                    loadingProgress.expectedTotalBytes!
-                                : null,
-                        color: semaforoColor,
-                        strokeWidth: 2,
+        child: Hero(
+          tag: heroTag,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap:
+                  imageUrl.isNotEmpty
+                      ? () => _openImagePreview(
+                        context,
+                        imageUrl,
+                        heroTag,
+                        semaforoColor,
+                      )
+                      : null,
+              child:
+                  imageUrl.isNotEmpty
+                      ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: semaforoColor.withValues(alpha: 0.08),
+                            child: const Icon(
+                              Icons.restaurant_menu_rounded,
+                              size: 30,
+                              color: AppColors.grey600,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                color: semaforoColor,
+                                strokeWidth: 2,
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                      : Container(
+                        color: semaforoColor.withValues(alpha: 0.08),
+                        child: const Icon(
+                          Icons.restaurant_menu_rounded,
+                          size: 30,
+                          color: AppColors.grey600,
+                        ),
                       ),
-                    );
-                  },
-                )
-                : Icon(semaforoIcon, color: semaforoColor, size: 28),
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -623,7 +692,7 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.1),
+            color: AppColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
@@ -673,99 +742,160 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
       }
     }
 
+    final heroTag = 'alimento_image_${alimento.id}';
+    final imageUrl = AlimentoDisplayHelper.getImageUrl(alimento.fotoPorcaoUrl);
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder:
-          (context) => Container(
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Indicador de arrastar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.grey300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+          (context) => DraggableScrollableSheet(
+            initialChildSize: 0.48,
+            minChildSize: 0.3,
+            maxChildSize: 0.92,
+            expand: false,
+            builder: (context, scrollController) {
+              return Container(
+                padding: const EdgeInsets.all(20),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
                   ),
                 ),
-                const SizedBox(height: 24),
+                child: SingleChildScrollView(
+                  controller: scrollController,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Drag indicator
+                      Center(
+                        child: Container(
+                          width: 40,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: AppColors.grey300,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
 
-                // Título e status
-                Row(
-                  children: [
-                    // Imagem do alimento
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: getSemaforoColor().withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: getSemaforoColor().withOpacity(0.3),
-                          width: 2,
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: _buildAlimentoImageForModal(
-                          alimento,
-                          getSemaforoColor(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
+                      // Header: imagem + título + chip
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            alimento.nomePopular,
-                            style: textTheme.titleLarge?.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w600,
+                          // imagem clicável com Hero e overlay de lupa
+                          GestureDetector(
+                            onTap:
+                                imageUrl.isNotEmpty
+                                    ? () => _openImagePreview(
+                                      context,
+                                      imageUrl,
+                                      heroTag,
+                                      getSemaforoColor(),
+                                    )
+                                    : null,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    color: getSemaforoColor().withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: getSemaforoColor().withValues(
+                                        alpha: 0.25,
+                                      ),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Hero(
+                                      tag: heroTag,
+                                      child: _buildAlimentoImageForModal(
+                                        alimento,
+                                        getSemaforoColor(),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+
+                                // overlay lupa quando existe imagem
+                                if (imageUrl.isNotEmpty)
+                                  Positioned(
+                                    bottom: 8,
+                                    right: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.45),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.zoom_in_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: getSemaforoColor().withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: getSemaforoColor().withOpacity(0.3),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
+
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Icon(
-                                  Icons.circle,
-                                  color: getSemaforoColor(),
-                                  size: 12,
-                                ),
-                                const SizedBox(width: 6),
                                 Text(
-                                  alimento.classificacaoCor.toUpperCase(),
-                                  style: textTheme.labelMedium?.copyWith(
-                                    color: getSemaforoColor(),
-                                    fontWeight: FontWeight.w600,
+                                  alimento.nomePopular,
+                                  style: textTheme.titleLarge?.copyWith(
+                                    color: AppColors.textPrimary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: getSemaforoColor().withValues(
+                                      alpha: 0.1,
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: getSemaforoColor().withValues(
+                                        alpha: 0.3,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.circle,
+                                        color: getSemaforoColor(),
+                                        size: 12,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        alimento.classificacaoCor.toUpperCase(),
+                                        style: textTheme.labelMedium?.copyWith(
+                                          color: getSemaforoColor(),
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -773,75 +903,107 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
 
-                // Informações detalhadas
-                _buildDetailRow(
-                  'Grupo DICUMÊ',
-                  alimento.grupoDicume,
-                  textTheme,
-                ),
-                _buildDetailRow(
-                  'Índice Glicêmico',
-                  AlimentoDisplayHelper.getIGClassificacaoFriendly(
-                    alimento.igClassificacao,
-                  ),
-                  textTheme,
-                ),
-                _buildDetailRow(
-                  'Grupo Nutricional',
-                  alimento.grupoNutricional,
-                  textTheme,
-                ),
-                _buildDetailRow(
-                  'Tipo de Alimento',
-                  AlimentoDisplayHelper.getGuiaAlimentarFriendly(
-                    alimento.guiaAlimentarClass,
-                  ),
-                  textTheme,
-                ),
-                _buildDetailRow(
-                  'Recomendação',
-                  AlimentoDisplayHelper.getRecomendacaoConsumoFriendly(
-                    alimento.recomendacaoConsumo,
-                  ),
-                  textTheme,
-                ),
+                      const SizedBox(height: 20),
 
-                const SizedBox(height: 24),
-
-                // Botão para adicionar ao prato
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () async {
-                      final feedbackService = ref.read(feedbackServiceProvider);
-                      await feedbackService.addAlimentoFeedback();
-
-                      if (context.mounted) {
-                        Navigator.of(context).pop(); // Fecha bottom sheet
-                        Navigator.of(context).pop(alimento); // Retorna alimento
-                      }
-                    },
-                    icon: const Icon(Icons.add_rounded),
-                    label: const Text('Adicionar ao Prato'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: AppColors.onPrimary,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                      // informações detalhadas em seções com espaçamento maior
+                      _buildDetailRow(
+                        'Grupo DICUMÊ',
+                        alimento.grupoDicume,
+                        textTheme,
                       ),
-                    ),
+                      _buildDetailRow(
+                        'Índice Glicêmico',
+                        AlimentoDisplayHelper.getIGClassificacaoFriendly(
+                          alimento.igClassificacao,
+                        ),
+                        textTheme,
+                      ),
+                      _buildDetailRow(
+                        'Grupo Nutricional',
+                        alimento.grupoNutricional,
+                        textTheme,
+                      ),
+                      _buildDetailRow(
+                        'Tipo de Alimento',
+                        AlimentoDisplayHelper.getGuiaAlimentarFriendly(
+                          alimento.guiaAlimentarClass,
+                        ),
+                        textTheme,
+                      ),
+                      _buildDetailRow(
+                        'Recomendação',
+                        AlimentoDisplayHelper.getRecomendacaoConsumoFriendly(
+                          alimento.recomendacaoConsumo,
+                        ),
+                        textTheme,
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Botões: adicionar ao prato + fechar
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () async {
+                                final feedbackService = ref.read(
+                                  feedbackServiceProvider,
+                                );
+                                await feedbackService.addAlimentoFeedback();
+                                if (context.mounted) {
+                                  Navigator.of(
+                                    context,
+                                  ).pop(); // fecha bottom sheet
+                                  Navigator.of(
+                                    context,
+                                  ).pop(alimento); // retorna alimento
+                                }
+                              },
+                              icon: const Icon(Icons.add_rounded),
+                              label: const Text('Adicionar ao Prato'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.onPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          SizedBox(
+                            width: 120,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.of(context).pop();
+                              },
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                  horizontal: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                minimumSize:
+                                    Size.zero, // permite o SizedBox controlar o tamanho
+                              ),
+                              child: const Text('Fechar'),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 8),
+                    ],
                   ),
                 ),
-
-                const SizedBox(height: 16),
-              ],
-            ),
+              );
+            },
           ),
     );
   }
@@ -899,23 +1061,27 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(
-            color: semaforoColor.withOpacity(0.1),
-            child: Icon(getIcon(), color: semaforoColor, size: 40),
+            color: semaforoColor.withValues(alpha: 0.08),
+            child: Icon(getIcon(), color: semaforoColor, size: 44),
           );
         },
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Container(
-            color: semaforoColor.withOpacity(0.1),
+            color: semaforoColor.withValues(alpha: 0.08),
             child: Center(
-              child: CircularProgressIndicator(
-                value:
-                    loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                color: semaforoColor,
-                strokeWidth: 2,
+              child: SizedBox(
+                width: 28,
+                height: 28,
+                child: CircularProgressIndicator(
+                  value:
+                      loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                  color: semaforoColor,
+                  strokeWidth: 2,
+                ),
               ),
             ),
           );
@@ -923,9 +1089,118 @@ class _BuscarAlimentosScreenState extends ConsumerState<BuscarAlimentosScreen> {
       );
     } else {
       return Container(
-        color: semaforoColor.withOpacity(0.1),
-        child: Icon(getIcon(), color: semaforoColor, size: 40),
+        color: semaforoColor.withValues(alpha: 0.08),
+        child: Icon(getIcon(), color: semaforoColor, size: 44),
       );
     }
+  }
+
+  // Preview fullscreen com InteractiveViewer + Hero
+  void _openImagePreview(
+    BuildContext context,
+    String imageUrl,
+    String heroTag,
+    Color semaforoColor,
+  ) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black.withOpacity(0.85),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => Navigator.of(context).pop(),
+            child: SafeArea(
+              child: Scaffold(
+                backgroundColor: Colors.transparent,
+                body: Stack(
+                  children: [
+                    Center(
+                      child: Hero(
+                        tag: heroTag,
+                        child: InteractiveViewer(
+                          maxScale: 5.0,
+                          minScale: 1.0,
+                          child:
+                              imageUrl.isNotEmpty
+                                  ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.contain,
+                                    loadingBuilder: (
+                                      context,
+                                      child,
+                                      loadingProgress,
+                                    ) {
+                                      if (loadingProgress == null) return child;
+                                      return Center(
+                                        child: CircularProgressIndicator(
+                                          value:
+                                              loadingProgress
+                                                          .expectedTotalBytes !=
+                                                      null
+                                                  ? loadingProgress
+                                                          .cumulativeBytesLoaded /
+                                                      loadingProgress
+                                                          .expectedTotalBytes!
+                                                  : null,
+                                          color: semaforoColor,
+                                        ),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        width: double.infinity,
+                                        color: semaforoColor.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        child: Icon(
+                                          Icons.broken_image_rounded,
+                                          color: semaforoColor,
+                                          size: 80,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                  : Container(
+                                    width: double.infinity,
+                                    color: semaforoColor.withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    child: Icon(
+                                      Icons.restaurant_menu_rounded,
+                                      color: semaforoColor,
+                                      size: 80,
+                                    ),
+                                  ),
+                        ),
+                      ),
+                    ),
+
+                    // Botão fechar visível
+                    Positioned(
+                      top: 20,
+                      right: 16,
+                      child: SafeArea(
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 }

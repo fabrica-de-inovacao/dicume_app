@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/services/feedback_service.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
+import '../../../core/database/database.dart';
 import '../../../core/utils/auth_utils.dart';
 import '../../controllers/auth_controller.dart';
 import 'edit_profile_bottom_sheet.dart';
@@ -178,63 +180,198 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
           ),
           const SizedBox(height: 20),
 
-          // Grid de estatísticas
-          Row(
-            children: [
-              Expanded(
-                child: _buildEstatisticaCard(
-                  icone: Icons.restaurant_menu,
-                  valor: '12', // Dados de exemplo - seria vindo da API
-                  label: 'Refeições\nRegistradas',
-                  cor: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildEstatisticaCard(
-                  icone: Icons.local_fire_department,
-                  valor: '5', // Dados de exemplo - seria vindo da API
-                  label: 'Dias\nConsecutivos',
-                  cor: AppColors.warning,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+          // Carregar estatísticas a partir do banco local (Refeições)
+          FutureBuilder<List<Refeicoe>>(
+            future: ref.read(databaseServiceProvider).getAllRefeicoes(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
 
-          // Meta atual
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.successLight,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.flag, color: AppColors.success, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Meta Atual',
-                      style: textTheme.titleSmall?.copyWith(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.w600,
+              final refeicoes = snapshot.data ?? <Refeicoe>[];
+
+              // Total de refeições registradas
+              final totalRefeicoes = refeicoes.length;
+
+              // Calcular dias distintos com refeições e streak atual (dias consecutivos até hoje)
+              final dateSet = <DateTime>{};
+              for (final r in refeicoes) {
+                final d = DateTime(
+                  r.dataHora.year,
+                  r.dataHora.month,
+                  r.dataHora.day,
+                );
+                dateSet.add(d);
+              }
+
+              int streak = 0;
+              DateTime day = DateTime.now();
+              day = DateTime(day.year, day.month, day.day);
+              while (dateSet.contains(day)) {
+                streak++;
+                day = day.subtract(const Duration(days: 1));
+              }
+
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildEstatisticaCard(
+                          icone: Icons.restaurant_menu,
+                          valor: totalRefeicoes.toString(),
+                          label: 'Refeições\nRegistradas',
+                          cor: AppColors.primary,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Controlar índice glicêmico dos alimentos', // Dados de exemplo
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.success,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildEstatisticaCard(
+                          icone: Icons.local_fire_department,
+                          valor: streak.toString(),
+                          label: 'Dias\nConsecutivos',
+                          cor: AppColors.warning,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+                  const SizedBox(height: 16),
+
+                  // Meta atual (texto estático por enquanto)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.successLight,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.flag,
+                              color: AppColors.success,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Meta Atual',
+                                style: textTheme.titleSmall?.copyWith(
+                                  color: AppColors.success,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              tooltip: 'Editar meta',
+                              icon: const Icon(
+                                Icons.edit,
+                                color: AppColors.success,
+                                size: 20,
+                              ),
+                              onPressed: () async {
+                                // Carregar meta atual
+                                final current = await ref
+                                    .read(databaseServiceProvider)
+                                    .getCacheValue('meta_atual');
+
+                                final controller = TextEditingController(
+                                  text: current ?? '',
+                                );
+
+                                final result = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Editar Meta'),
+                                      content: TextField(
+                                        controller: controller,
+                                        maxLength: 80,
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'Ex: Controlar carboidratos em cada refeição',
+                                        ),
+                                        autofocus: true,
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed:
+                                              () => Navigator.of(
+                                                context,
+                                              ).pop(false),
+                                          child: const Text('Cancelar'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () async {
+                                            final meta = controller.text.trim();
+                                            try {
+                                              await ref
+                                                  .read(databaseServiceProvider)
+                                                  .setCacheValue(
+                                                    'meta_atual',
+                                                    meta,
+                                                  );
+                                              await FeedbackService()
+                                                  .successFeedback();
+                                              Navigator.of(context).pop(true);
+                                            } catch (e) {
+                                              await FeedbackService()
+                                                  .errorFeedback();
+                                            }
+                                          },
+                                          child: const Text('Salvar'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+
+                                if (result == true) {
+                                  setState(() {});
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        FutureBuilder<String?>(
+                          future: ref
+                              .read(databaseServiceProvider)
+                              .getCacheValue('meta_atual'),
+                          builder: (context, snapMeta) {
+                            if (snapMeta.connectionState !=
+                                ConnectionState.done) {
+                              return const SizedBox(
+                                height: 24,
+                                child: Center(
+                                  child: CircularProgressIndicator(),
+                                ),
+                              );
+                            }
+
+                            final meta = snapMeta.data;
+                            return Text(
+                              meta == null || meta.isEmpty
+                                  ? 'Defina sua meta para personalizar seu progresso.'
+                                  : meta,
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppColors.success,
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),

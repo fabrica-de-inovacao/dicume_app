@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/services/feedback_service.dart';
+import '../auth/auth_modal_screen.dart';
+import '../../../core/services/database_service.dart';
 
-class OnboardingScreen extends StatefulWidget {
+class OnboardingScreen extends ConsumerStatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  State<OnboardingScreen> createState() => _OnboardingScreenState();
+  ConsumerState<OnboardingScreen> createState() => _OnboardingScreenState();
 }
 
-class _OnboardingScreenState extends State<OnboardingScreen> {
+class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
-
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Bem-vindo ao DICUMÊ!',
@@ -41,6 +43,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       animation: 'assets/lottie/plate_empty.json',
     ),
     OnboardingPage(
+      title: 'Qual sua meta?',
+      subtitle: 'Defina um objetivo simples',
+      description:
+          'Escreva uma meta curta que descreva seu objetivo com o app (ex: controlar carboidratos, reduzir peso, manter glicemia estável).',
+      imagePath: 'assets/images/onboarding_goal.png',
+    ),
+    OnboardingPage(
+      title: 'Faça login para salvar',
+      subtitle: 'Salve seu progresso',
+      description:
+          'Faça login para salvar sua meta e sincronizar seu progresso entre dispositivos. Você pode pular se preferir salvar apenas localmente.',
+      imagePath: 'assets/images/onboarding_login.png',
+    ),
+    OnboardingPage(
       title: 'Vamos Começar!',
       subtitle: 'Preparando seu ambiente personalizado',
       description:
@@ -50,15 +66,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+  // Controller para a nova página de meta
+  final TextEditingController _metaController = TextEditingController();
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
 
-  void _nextPage() {
+  Future<void> _nextPage() async {
     if (_currentIndex < _pages.length - 1) {
       FeedbackService().lightTap();
+
+      // Se estivermos na página de meta, salvar localmente antes de avançar
+      if (_pages[_currentIndex].title == 'Qual sua meta?') {
+        final meta = _metaController.text.trim();
+        if (meta.isNotEmpty) {
+          try {
+            await ref
+                .read(databaseServiceProvider)
+                .setCacheValue('meta_atual', meta);
+            await FeedbackService().successFeedback();
+          } catch (e) {
+            await FeedbackService().errorFeedback();
+          }
+        }
+      }
+
+      await _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    } else {
+      _finishOnboarding();
+    }
+  }
+
+  void _skipPage() {
+    // Avança sem salvar (usado pelo botão Pular nas steps)
+    FeedbackService().lightTap();
+    if (_currentIndex < _pages.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -133,7 +181,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   // Botão pular (só nas primeiras páginas)
                   if (_currentIndex < _pages.length - 1)
                     TextButton(
-                      onPressed: _finishOnboarding,
+                      onPressed: _skipPage,
                       child: Text(
                         'Pular',
                         style: textTheme.bodyMedium?.copyWith(
@@ -188,11 +236,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page, TextTheme textTheme) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Spacer(),
+          const SizedBox(height: 24),
 
           // Imagem ou animação
           Container(
@@ -264,7 +313,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
 
           const SizedBox(height: 24),
-
           // Descrição
           Text(
             page.description,
@@ -275,7 +323,167 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 16),
+
+          // Se for a página de login, renderizar botão para abrir modal de autenticação
+          if (page.title == 'Faça login para salvar') ...[
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: DicumeElegantButton(
+                text: 'Fazer login',
+                onPressed: () async {
+                  FeedbackService().lightTap();
+                  await showAuthModal(context);
+                },
+                isSmall: false,
+                icon: Icons.login,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                _skipPage();
+              },
+              child: const Text('Pular'),
+            ),
+          ] else
+          // Se for a página de meta, renderizar campo de entrada e botões
+          if (page.title == 'Qual sua meta?') ...[
+            const SizedBox(height: 8),
+            TextField(
+              controller: _metaController,
+              maxLength: 80,
+              decoration: InputDecoration(
+                hintText: 'Ex: Controlar carboidratos em cada refeição',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                // Se a largura for pequena, empilhar verticalmente para evitar overflow
+                if (constraints.maxWidth < 360) {
+                  return Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: DicumeElegantButton(
+                          text: 'Salvar localmente',
+                          onPressed: () async {
+                            FeedbackService().lightTap();
+                            final meta = _metaController.text.trim();
+                            if (meta.isNotEmpty) {
+                              try {
+                                await ref
+                                    .read(databaseServiceProvider)
+                                    .setCacheValue('meta_atual', meta);
+                                await FeedbackService().successFeedback();
+                              } catch (e) {
+                                await FeedbackService().errorFeedback();
+                              }
+                            }
+                          },
+                          isSmall: true,
+                          icon: Icons.save,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: DicumeElegantButton(
+                          text: 'Salvar e continuar',
+                          onPressed: () async {
+                            FeedbackService().lightTap();
+                            final meta = _metaController.text.trim();
+                            if (meta.isNotEmpty) {
+                              try {
+                                await ref
+                                    .read(databaseServiceProvider)
+                                    .setCacheValue('meta_atual', meta);
+                                await FeedbackService().successFeedback();
+                                _nextPage();
+                              } catch (e) {
+                                await FeedbackService().errorFeedback();
+                              }
+                            } else {
+                              _nextPage();
+                            }
+                          },
+                          isSmall: true,
+                          icon: Icons.save,
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                // Largura suficiente: manter os botões lado a lado
+                return Row(
+                  children: [
+                    Expanded(
+                      child: DicumeElegantButton(
+                        text: 'Salvar localmente',
+                        onPressed: () async {
+                          FeedbackService().lightTap();
+                          final meta = _metaController.text.trim();
+                          if (meta.isNotEmpty) {
+                            try {
+                              await ref
+                                  .read(databaseServiceProvider)
+                                  .setCacheValue('meta_atual', meta);
+                              await FeedbackService().successFeedback();
+                            } catch (e) {
+                              await FeedbackService().errorFeedback();
+                            }
+                          }
+                        },
+                        isSmall: true,
+                        icon: Icons.save,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DicumeElegantButton(
+                        text: 'Salvar e continuar',
+                        onPressed: () async {
+                          FeedbackService().lightTap();
+                          final meta = _metaController.text.trim();
+                          if (meta.isNotEmpty) {
+                            try {
+                              await ref
+                                  .read(databaseServiceProvider)
+                                  .setCacheValue('meta_atual', meta);
+                              await FeedbackService().successFeedback();
+                              _nextPage();
+                            } catch (e) {
+                              await FeedbackService().errorFeedback();
+                            }
+                          } else {
+                            _nextPage();
+                          }
+                        },
+                        isSmall: true,
+                        icon: Icons.save,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () {
+                FeedbackService().lightTap();
+                _nextPage();
+              },
+              child: const Text('Pular'),
+            ),
+          ],
+
+          const SizedBox(height: 24),
         ],
       ),
     );

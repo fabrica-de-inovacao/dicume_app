@@ -33,15 +33,14 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
         '🍎 [ALIMENTOS] Encontrados ${alimentosDb.length} alimentos no banco',
       );
 
-      final alimentos =
-          alimentosDb.map((alimentoDb) async {
-            // Tenta recuperar o UUID original
-            final originalId = await _getOriginalId(alimentoDb.id);
-            return _alimentoFromDb(alimentoDb, originalId: originalId);
-          }).toList();
+      final alimentosFutures = alimentosDb.map((alimentoDb) async {
+        // Tenta recuperar o UUID original
+        final originalId = await _getOriginalId(alimentoDb.id);
+        return await _alimentoFromDb(alimentoDb, originalId: originalId);
+      });
 
       // Aguarda todos os futures serem resolvidos
-      final alimentosResolved = await Future.wait(alimentos);
+      final alimentosResolved = await Future.wait(alimentosFutures);
       print(
         '🍎 [ALIMENTOS] Retornando ${alimentosResolved.length} alimentos convertidos',
       );
@@ -58,7 +57,8 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   ) async {
     try {
       final alimentosDb = await databaseService.getAlimentosByCategoria(grupo);
-      final alimentos = alimentosDb.map(_alimentoFromDb).toList();
+      final alimentosFutures = alimentosDb.map((db) => _alimentoFromDb(db));
+      final alimentos = await Future.wait(alimentosFutures);
       return Right(alimentos);
     } catch (e) {
       return Left(CacheFailure('Erro ao obter alimentos por grupo: $e'));
@@ -70,13 +70,14 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
     String query,
   ) async {
     try {
-      print('🔍 [BUSCA] Buscando alimentos com query: "$query"');
+      print('🔍 [BUSCA] Buscando alimentos com query: "${query}"');
       final alimentosDb = await databaseService.searchAlimentos(query);
       print(
         '🔍 [BUSCA] Encontrados ${alimentosDb.length} alimentos que correspondem à busca',
       );
 
-      final alimentos = alimentosDb.map(_alimentoFromDb).toList();
+      final alimentosFutures = alimentosDb.map((db) => _alimentoFromDb(db));
+      final alimentos = await Future.wait(alimentosFutures);
       print('🔍 [BUSCA] Retornando ${alimentos.length} alimentos convertidos');
       return Right(alimentos);
     } catch (e) {
@@ -90,7 +91,8 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   getFavoritosAlimentos() async {
     try {
       final alimentosDb = await databaseService.getFavoritosAlimentos();
-      final alimentos = alimentosDb.map(_alimentoFromDb).toList();
+      final alimentosFutures = alimentosDb.map((db) => _alimentoFromDb(db));
+      final alimentos = await Future.wait(alimentosFutures);
       return Right(alimentos);
     } catch (e) {
       return Left(CacheFailure('Erro ao obter alimentos favoritos: $e'));
@@ -108,7 +110,8 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
       if (alimentoDb == null) {
         return const Right(null);
       }
-      return Right(_alimentoFromDb(alimentoDb, originalId: id));
+      final alimento = await _alimentoFromDb(alimentoDb, originalId: id);
+      return Right(alimento);
     } catch (e) {
       return Left(CacheFailure('Erro ao obter alimento por ID: $e'));
     }
@@ -182,6 +185,11 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
         );
 
         await databaseService.insertAlimento(alimentoCompanion);
+        // Salva a URL da foto no cache separado para recuperar depois
+        await databaseService.setCacheValue(
+          'alimento_foto_$intId',
+          alimentoModel.fotoPorcaoUrl,
+        );
         count++;
 
         if (count % 20 == 0) {
@@ -235,9 +243,20 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   }
   // Métodos auxiliares
 
-  entities.Alimento _alimentoFromDb(Alimento alimentoDb, {String? originalId}) {
+  Future<entities.Alimento> _alimentoFromDb(
+    Alimento alimentoDb, {
+    String? originalId,
+  }) async {
     // Se temos o ID original (UUID), usa ele; senão converte o int para string
     final alimentoId = originalId ?? alimentoDb.id.toString();
+    // Tenta recuperar a URL da foto do cache (se existir)
+    String fotoUrl = '';
+    try {
+      final cached = await databaseService.getCacheValue(
+        'alimento_foto_${alimentoDb.id}',
+      );
+      if (cached != null) fotoUrl = cached;
+    } catch (_) {}
 
     return entities.Alimento(
       id: alimentoId,
@@ -245,7 +264,7 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
       grupoDicume: alimentoDb.categoria,
       classificacaoCor: 'verde', // Será implementado depois com dados reais
       recomendacaoConsumo: '1 porção',
-      fotoPorcaoUrl: '',
+      fotoPorcaoUrl: fotoUrl,
       grupoNutricional: 'Carboidrato',
       igClassificacao: 'baixo',
       guiaAlimentarClass: 'in_natura',
