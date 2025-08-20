@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/setup/setup_loading_screen.dart';
-import '../../presentation/screens/auth/simple_login_screen.dart';
 import '../../presentation/screens/main/main_navigation_screen.dart';
 import '../../presentation/screens/home/home_screen_elegante.dart';
 import '../../presentation/screens/montar_prato/buscar_alimentos_screen.dart';
@@ -22,7 +21,6 @@ class AppRoutes {
   static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String setupLoading = '/setup-loading';
-  static const String login = '/login';
   static const String buscar = '/buscar';
   static const String home = '/home';
   static const String aprender = '/aprender';
@@ -57,11 +55,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.setupLoading,
         builder: (context, state) => const SetupLoadingScreen(),
-      ), // Login Screen
-      GoRoute(
-        path: AppRoutes.login,
-        builder: (context, state) => const LoginScreen(),
-      ), // Tela de Montar Prato Virtual (fora da navegação principal)
+      ),
+
+      // Tela de Montar Prato Virtual (fora da navegação principal)
       GoRoute(
         path: AppRoutes.montarPratoVirtual,
         builder: (context, state) => const MontarPratoVirtualScreen(),

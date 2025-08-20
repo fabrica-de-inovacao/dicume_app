@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
@@ -23,18 +24,8 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(AnimationConstants.splashDuration);
 
     if (mounted) {
-      // TODO: Verificar se usuário está logado
-      // Por enquanto, vai direto para uma tela temporária
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder:
-              (context, animation, secondaryAnimation) =>
-                  const TemporaryHomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      );
+      // Navegar usando go_router em vez de Navigator
+      context.go('/home');
     }
   }
 

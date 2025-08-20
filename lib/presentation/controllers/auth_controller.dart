@@ -1,9 +1,13 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/user.dart';
 import '../../domain/entities/auth.dart';
 import '../../domain/entities/failures.dart';
 import '../../data/providers/auth_providers.dart';
+import '../../core/services/auth_service.dart';
+// ...existing code...
 
 part 'auth_controller.g.dart';
 
@@ -103,17 +107,59 @@ class SMSVerificationState {
 
 @riverpod
 class AuthController extends _$AuthController {
+  bool _checking = false;
   @override
   AuthState build() {
-    // Verifica se há usuário autenticado ao inicializar
-    _checkAuthStatus();
+    // Retorna estado inicial e verifica autenticação depois
     return const AuthState();
   }
 
+  // Método para inicializar verificação de autenticação
+  Future<void> initialize() async {
+    // Inscrever-se nas mudanças de estado do repositório para reagir
+    // a atualizações que venham de outros pontos do app (ex: cache local
+    // atualizado por datasources, SMS, etc.).
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      // Cancelar inscrição antiga se houver
+      _authSubscription?.cancel();
+      _authSubscription = repo.authStateChanges.listen((user) {
+        if (user != null) {
+          updateAuthenticatedUser(user);
+        } else {
+          state = state.copyWith(
+            status: AuthStatus.unauthenticated,
+            user: null,
+          );
+        }
+      });
+    } catch (e) {
+      debugPrint(
+        '[AUTH_CONTROLLER] falha ao inscrever em authStateChanges: $e',
+      );
+    }
+
+    await _checkAuthStatus();
+    // Garantir cancelamento ao descartar o provider
+    ref.onDispose(() {
+      _authSubscription?.cancel();
+    });
+  }
+
+  StreamSubscription<User?>? _authSubscription;
+
   // Verifica status de autenticação atual
   Future<void> _checkAuthStatus() async {
+    if (_checking) {
+      debugPrint(
+        '[AUTH_CONTROLLER] _checkAuthStatus: já em execução, ignorando chamada concorrente',
+      );
+      return;
+    }
+    _checking = true;
     try {
       state = state.copyWith(status: AuthStatus.loading);
+      debugPrint('[AUTH_CONTROLLER] _checkAuthStatus: iniciado');
 
       final isAuthenticatedUseCase = ref.read(isAuthenticatedUseCaseProvider);
       final isAuthenticated = await isAuthenticatedUseCase();
@@ -123,7 +169,88 @@ class AuthController extends _$AuthController {
         final user = await getCurrentUserUseCase();
 
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
+        debugPrint('[AUTH_CONTROLLER] usuário vindo do usecase: ${user?.nome}');
       } else {
+        // Tentar fallback: talvez o token/usuario tenham sido salvos pelo
+        // AuthService (usado por ApiService) em chaves diferentes.
+        try {
+          final authService = AuthService();
+          final userMap = await authService.getUserData();
+          if (userMap != null) {
+            final Map<String, dynamic> map = Map<String, dynamic>.from(userMap);
+
+            // Extrair campos com tolerância a nulos/formats
+            final id =
+                (map['id'] ?? map['sub'] ?? map['user_metadata']?['sub'])
+                    ?.toString() ??
+                '';
+            final nome =
+                (map['user_metadata']?['nome_exibicao'] ??
+                        map['user_metadata']?['full_name'] ??
+                        map['user_metadata']?['name'] ??
+                        map['nome'] ??
+                        '')
+                    ?.toString() ??
+                '';
+            final email =
+                (map['email'] ?? map['user_metadata']?['email'])?.toString() ??
+                '';
+
+            DateTime createdAt;
+            try {
+              createdAt = DateTime.parse(
+                (map['created_at'] ?? map['createdAt'])?.toString() ??
+                    DateTime.now().toIso8601String(),
+              );
+            } catch (_) {
+              createdAt = DateTime.now();
+            }
+
+            DateTime updatedAt;
+            try {
+              updatedAt = DateTime.parse(
+                (map['updated_at'] ?? map['updatedAt'])?.toString() ??
+                    createdAt.toIso8601String(),
+              );
+            } catch (_) {
+              updatedAt = createdAt;
+            }
+
+            final avatarUrl =
+                (map['user_metadata']?['avatar_url'] ??
+                        map['user_metadata']?['picture'] ??
+                        map['avatar_url'])
+                    ?.toString();
+
+            final userEntity = User(
+              id: id,
+              nome:
+                  nome.isNotEmpty
+                      ? nome
+                      : (email.isNotEmpty
+                          ? email.split('@').first
+                          : 'Usuário DICUMÊ'),
+              email: email,
+              telefone: null,
+              avatarUrl: avatarUrl,
+              createdAt: createdAt,
+              updatedAt: updatedAt,
+              preferences: const UserPreferences(),
+            );
+
+            state = state.copyWith(
+              status: AuthStatus.authenticated,
+              user: userEntity,
+            );
+            debugPrint(
+              '[AUTH_CONTROLLER] usuário vindo do fallback: ${userEntity.nome}',
+            );
+            return;
+          }
+        } catch (e) {
+          debugPrint('[AUTH_CONTROLLER] Fallback getUserData falhou: $e');
+        }
+
         state = state.copyWith(status: AuthStatus.unauthenticated);
       }
     } catch (e) {
@@ -131,6 +258,8 @@ class AuthController extends _$AuthController {
         status: AuthStatus.error,
         errorMessage: 'Erro ao verificar autenticação: $e',
       );
+    } finally {
+      _checking = false;
     }
   }
 
@@ -231,6 +360,9 @@ class AuthController extends _$AuthController {
   // Método público para atualizar usuário autenticado (usado pelo SMS controller)
   void updateAuthenticatedUser(User user) {
     state = state.copyWith(status: AuthStatus.authenticated, user: user);
+    debugPrint(
+      '[AUTH_CONTROLLER] updateAuthenticatedUser executado: ${user.nome}',
+    );
   }
 }
 
@@ -301,6 +433,8 @@ class SMSVerificationController extends _$SMSVerificationController {
       );
       final result = await verifyAndSignInWithSMSUseCase(request);
 
+      // Capturar resultado sem usar `await` dentro do fold
+      User? returnedUser;
       result.fold(
         (failure) {
           state = state.copyWith(
@@ -309,18 +443,90 @@ class SMSVerificationController extends _$SMSVerificationController {
           );
         },
         (user) {
-          state = state.copyWith(
-            status: SMSVerificationStatus.verified,
-          ); // Atualiza o estado de autenticação
-          ref
-              .read(authControllerProvider.notifier)
-              .updateAuthenticatedUser(user);
+          returnedUser = user;
         },
       );
+
+      if (returnedUser != null) {
+        // Tentar ler dados adicionais salvos pelo AuthService e atualizar o AuthController
+        try {
+          final authService = AuthService();
+          final userMap = await authService.getUserData();
+          if (userMap != null) {
+            final Map<String, dynamic> map = Map<String, dynamic>.from(userMap);
+
+            // Extrair campos essenciais com tolerância a nulos/formatos diferentes
+            final id =
+                (map['id'] ?? map['sub'] ?? map['user_metadata']?['sub'])
+                    ?.toString() ??
+                '';
+            final nome =
+                (map['user_metadata']?['nome_exibicao'] ??
+                        map['user_metadata']?['name'] ??
+                        map['nome'] ??
+                        '')
+                    ?.toString() ??
+                '';
+            final email =
+                (map['email'] ?? map['user_metadata']?['email'])?.toString() ??
+                '';
+
+            DateTime createdAt;
+            try {
+              createdAt = DateTime.parse(
+                (map['created_at'] ?? map['createdAt'])?.toString() ??
+                    DateTime.now().toIso8601String(),
+              );
+            } catch (_) {
+              createdAt = DateTime.now();
+            }
+
+            DateTime updatedAt;
+            try {
+              updatedAt = DateTime.parse(
+                (map['updated_at'] ?? map['updatedAt'])?.toString() ??
+                    createdAt.toIso8601String(),
+              );
+            } catch (_) {
+              updatedAt = createdAt;
+            }
+
+            final avatarUrl =
+                (map['user_metadata']?['avatar_url'] ?? map['avatar_url'])
+                    ?.toString();
+
+            final userEntity = User(
+              id: id.isNotEmpty ? id : returnedUser!.id,
+              nome: nome.isNotEmpty ? nome : returnedUser!.nome,
+              email: email.isNotEmpty ? email : returnedUser!.email,
+              telefone: returnedUser!.telefone,
+              avatarUrl: avatarUrl ?? returnedUser!.avatarUrl,
+              createdAt: createdAt,
+              updatedAt: updatedAt,
+              preferences: returnedUser!.preferences,
+            );
+
+            // Atualizar AuthController globalmente
+            try {
+              ref
+                  .read(authControllerProvider.notifier)
+                  .updateAuthenticatedUser(userEntity);
+            } catch (e) {
+              debugPrint(
+                '[SMS_CONTROLLER] Falha ao atualizar AuthController: $e',
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('[SMS_CONTROLLER] Fallback getUserData falhou: $e');
+        }
+
+        state = state.copyWith(status: SMSVerificationStatus.verified);
+      }
     } catch (e) {
       state = state.copyWith(
         status: SMSVerificationStatus.error,
-        errorMessage: 'Erro inesperado durante verificação: $e',
+        errorMessage: 'Erro inesperado ao verificar código: $e',
       );
     }
   }

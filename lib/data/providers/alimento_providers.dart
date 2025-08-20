@@ -46,20 +46,37 @@ AlimentoRepository alimentoRepository(Ref ref) {
 class AlimentosCache extends _$AlimentosCache {
   @override
   Future<List<Object?>> build() async {
+    print('📦 [CACHE] Inicializando cache de alimentos...');
     final repository = ref.watch(alimentoRepositoryProvider);
 
     // Verifica se o cache está desatualizado
+    print('📦 [CACHE] Verificando se cache está desatualizado...');
     final isOutdated = await repository.isCacheOutdated();
+    print('📦 [CACHE] Cache desatualizado: $isOutdated');
+
     if (isOutdated) {
+      print('📦 [CACHE] Sincronizando com a API...');
       // Tenta sincronizar com a API
-      await repository.syncAlimentosFromAPI();
+      final syncResult = await repository.syncAlimentosFromAPI();
+      syncResult.fold(
+        (failure) =>
+            print('📦 [CACHE] ❌ Erro na sincronização: ${failure.message}'),
+        (count) => print('📦 [CACHE] ✅ Sincronizados $count alimentos'),
+      );
     }
 
     // Retorna os alimentos do cache local
+    print('📦 [CACHE] Obtendo alimentos do cache local...');
     final result = await repository.getAllAlimentos();
     return result.fold(
-      (failure) => throw Exception(failure.message),
-      (alimentos) => alimentos,
+      (failure) {
+        print('📦 [CACHE] ❌ Erro ao obter alimentos: ${failure.message}');
+        throw Exception(failure.message);
+      },
+      (alimentos) {
+        print('📦 [CACHE] ✅ Retornando ${alimentos.length} alimentos do cache');
+        return alimentos;
+      },
     );
   }
 

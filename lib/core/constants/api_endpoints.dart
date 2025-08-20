@@ -1,13 +1,15 @@
 class ApiEndpoints {
   // Base URLs
-  static const String baseUrl = 'http://189.90.44.226:5050/api/v1';
-  static const String baseUrlDev = 'http://189.90.44.226:5050/api/v1';
+  static const String baseUrl = 'http://192.168.2.8:5050/api/v1';
+  static const String baseUrlDev = 'http://192.168.2.8:5050/api/v1';
 
   // Health Check
   static const String healthCheck = '/';
   static const String docs = '/docs';
   // Authentication
   static const String loginGoogle = '/auth/google';
+  static const String signup = '/auth/signup';
+  static const String signin = '/auth/signin';
   static const String requestSMSCode = '/auth/solicitar-codigo';
   static const String verifySMSCode = '/auth/validar-codigo';
   static const String logout = '/auth/logout';

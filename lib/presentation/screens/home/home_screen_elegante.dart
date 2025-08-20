@@ -9,6 +9,7 @@ import '../../../core/services/feedback_service.dart';
 import '../../../core/services/mock_data_service_regional.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/auth_utils.dart';
+import '../../../data/providers/alimento_providers.dart';
 import '../../controllers/auth_controller.dart';
 
 class HomeScreenElegante extends ConsumerStatefulWidget {
@@ -51,6 +52,9 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
     final authState = ref.watch(authControllerProvider);
+
+    // Disparar sincronização de alimentos na inicialização da tela
+    ref.watch(alimentosCacheProvider);
 
     return PopScope(
       canPop: false,
@@ -641,9 +645,9 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
     );
   }
 
-  Widget _buildCabecalhoUsuario(TextTheme textTheme, AuthState authState) {
+  Widget _buildCabecalhoUsuario(TextTheme textTheme, AuthState? authState) {
     // Obter nome do usuário ou usar padrão
-    final nomeUsuario = authState.user?.nome ?? 'Usuário DICUMÊ';
+    final nomeUsuario = authState?.user?.nome ?? 'Usuário DICUMÊ';
     final primeiroNome = nomeUsuario.split(' ').first;
 
     // Gerar iniciais do usuário

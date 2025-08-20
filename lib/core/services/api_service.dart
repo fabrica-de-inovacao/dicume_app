@@ -165,6 +165,64 @@ class ApiService {
     }
   }
 
+  // Registrar usuário via email/senha (signup)
+  Future<ApiResult<Map<String, dynamic>>> signupWithEmail(
+    String email,
+    String senha,
+    String nomeExibicao,
+  ) async {
+    try {
+      debugPrint('[API] Iniciando signup via email: $email');
+      final response = await _http.post(
+        ApiEndpoints.signup,
+        data: {'email': email, 'senha': senha, 'nome_exibicao': nomeExibicao},
+      );
+
+      debugPrint('[API] Signup response: ${response.data}');
+      await _saveApiResponse(response.data);
+
+      return ApiResult.success(
+        _sanitizeMap(Map<String, dynamic>.from(response.data)),
+      );
+    } on AppException catch (e) {
+      return ApiResult.error(e.message, e.type);
+    } catch (e) {
+      return ApiResult.error('Erro no signup: $e');
+    }
+  }
+
+  // Login via email/senha (signin)
+  Future<ApiResult<AuthResponse>> signinWithEmail(
+    String email,
+    String senha,
+  ) async {
+    try {
+      debugPrint('[API] Iniciando signin via email: $email');
+      final response = await _http.post(
+        ApiEndpoints.signin,
+        data: {'email': email, 'senha': senha},
+      );
+
+      debugPrint('[API] ✅ Resposta signin recebida');
+      debugPrint('🌐 [API] Status Code: ${response.statusCode}');
+      debugPrint('🌐 [API] Response data: ${response.data}');
+
+      await _saveApiResponse(response.data);
+
+      final authResponse = AuthResponse.fromJson(response.data);
+
+      // Salvar token e dados do usuário
+      await _auth.saveToken(authResponse.token);
+      await _auth.saveUserData(authResponse.usuario);
+
+      return ApiResult.success(authResponse);
+    } on AppException catch (e) {
+      return ApiResult.error(e.message, e.type);
+    } catch (e) {
+      return ApiResult.error('Erro no signin: $e');
+    }
+  }
+
   // Obter perfil do usuário
   Future<ApiResult<UserProfile>> getUserProfile() async {
     try {
@@ -189,6 +247,22 @@ class ApiService {
       return ApiResult.error(e.message, e.type);
     } catch (e) {
       return ApiResult.error('Erro ao atualizar perfil: $e');
+    }
+  }
+
+  // Buscar CEP via ViaCEP (API pública)
+  Future<ApiResult<Map<String, dynamic>>> buscarCep(String cep) async {
+    try {
+      final response = await _http.get('https://viacep.com.br/ws/$cep/json/');
+      final data = Map<String, dynamic>.from(response.data);
+      if (data.containsKey('erro') && (data['erro'] == true)) {
+        return ApiResult.error('CEP não encontrado', AppExceptionType.notFound);
+      }
+      return ApiResult.success(data);
+    } on AppException catch (e) {
+      return ApiResult.error(e.message, e.type);
+    } catch (e) {
+      return ApiResult.error('Erro ao buscar CEP: $e');
     }
   }
 
@@ -335,6 +409,7 @@ class UserProfile {
   final bool? fazAcompanhamentoMedico;
   final String? cidade;
   final String? bairro;
+  final String? telefone;
 
   UserProfile({
     this.nomeExibicao,
@@ -345,6 +420,7 @@ class UserProfile {
     this.fazAcompanhamentoMedico,
     this.cidade,
     this.bairro,
+    this.telefone,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -357,6 +433,7 @@ class UserProfile {
       fazAcompanhamentoMedico: json['faz_acompanhamento_medico'],
       cidade: json['cidade'],
       bairro: json['bairro'],
+      telefone: json['telefone'],
     );
   }
 
@@ -370,6 +447,7 @@ class UserProfile {
       'faz_acompanhamento_medico': fazAcompanhamentoMedico,
       'cidade': cidade,
       'bairro': bairro,
+      'telefone': telefone,
     }..removeWhere((key, value) => value == null);
   }
 }

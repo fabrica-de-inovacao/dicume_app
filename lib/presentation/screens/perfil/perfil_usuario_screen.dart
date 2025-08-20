@@ -8,6 +8,7 @@ import '../../../core/services/feedback_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/utils/auth_utils.dart';
 import '../../controllers/auth_controller.dart';
+import 'edit_profile_bottom_sheet.dart';
 
 class PerfilUsuarioScreen extends ConsumerStatefulWidget {
   const PerfilUsuarioScreen({super.key});
@@ -549,12 +550,20 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
 
   // Métodos de ação (seriam implementados com navegação real)
   void _editarPerfil() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Abrir edição de perfil...'),
-        backgroundColor: AppColors.primary,
-      ),
-    );
+    showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const EditProfileBottomSheet(),
+    ).then((saved) async {
+      // Sempre recarregar o estado de autenticação ao fechar o modal
+      try {
+        await ref.read(authControllerProvider.notifier).initialize();
+      } catch (e) {
+        // ignore: avoid_print
+        debugPrint('[PERFIL] erro ao reinicializar auth controller: $e');
+      }
+    });
   }
 
   void _abrirNotificacoes() {

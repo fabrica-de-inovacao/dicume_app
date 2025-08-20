@@ -27,7 +27,12 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   Future<Either<CacheFailure, List<entities.Alimento>>>
   getAllAlimentos() async {
     try {
+      print('🍎 [ALIMENTOS] Buscando alimentos do banco local...');
       final alimentosDb = await databaseService.getAllAlimentos();
+      print(
+        '🍎 [ALIMENTOS] Encontrados ${alimentosDb.length} alimentos no banco',
+      );
+
       final alimentos =
           alimentosDb.map((alimentoDb) async {
             // Tenta recuperar o UUID original
@@ -37,8 +42,12 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
 
       // Aguarda todos os futures serem resolvidos
       final alimentosResolved = await Future.wait(alimentos);
+      print(
+        '🍎 [ALIMENTOS] Retornando ${alimentosResolved.length} alimentos convertidos',
+      );
       return Right(alimentosResolved);
     } catch (e) {
+      print('🍎 [ALIMENTOS] ❌ Erro ao obter alimentos: $e');
       return Left(CacheFailure('Erro ao obter alimentos do cache: $e'));
     }
   }
@@ -61,10 +70,17 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
     String query,
   ) async {
     try {
+      print('🔍 [BUSCA] Buscando alimentos com query: "$query"');
       final alimentosDb = await databaseService.searchAlimentos(query);
+      print(
+        '🔍 [BUSCA] Encontrados ${alimentosDb.length} alimentos que correspondem à busca',
+      );
+
       final alimentos = alimentosDb.map(_alimentoFromDb).toList();
+      print('🔍 [BUSCA] Retornando ${alimentos.length} alimentos convertidos');
       return Right(alimentos);
     } catch (e) {
+      print('🔍 [BUSCA] ❌ Erro na busca: $e');
       return Left(CacheFailure('Erro ao buscar alimentos: $e'));
     }
   }
@@ -123,22 +139,32 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   @override
   Future<Either<CacheFailure, int>> syncAlimentosFromAPI() async {
     try {
+      print('🌐 [SYNC] Iniciando sincronização de alimentos da API...');
+
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
       if (connectivityResult.contains(ConnectivityResult.none)) {
+        print('🌐 [SYNC] ❌ Sem conexão com a internet');
         return Left(CacheFailure('Sem conexão com a internet'));
       }
 
+      print(
+        '🌐 [SYNC] ✅ Conectividade verificada, fazendo requisição à API...',
+      );
+
       // Busca alimentos da API (sem autenticação necessária)
       final alimentosModel = await remoteDataSource.getAllAlimentos();
+      print('🌐 [SYNC] ✅ Recebidos ${alimentosModel.length} alimentos da API');
 
       // Limpa cache atual
+      print('🌐 [SYNC] Limpando cache atual...');
       await databaseService.clearAlimentos();
 
       // Salva novos alimentos no cache
       int count = 0;
       final Map<String, int> idMapping = {}; // Mapeia UUID para int
 
+      print('🌐 [SYNC] Salvando alimentos no banco local...');
       for (final alimentoModel in alimentosModel) {
         // Converte UUID string para int único
         final intId = _stringToIntId(alimentoModel.id);
@@ -157,7 +183,13 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
 
         await databaseService.insertAlimento(alimentoCompanion);
         count++;
+
+        if (count % 20 == 0) {
+          print('🌐 [SYNC] Salvos $count alimentos...');
+        }
       }
+
+      print('🌐 [SYNC] ✅ Total de $count alimentos salvos no banco local');
 
       // Salva o mapeamento de IDs
       await _saveIdMapping(idMapping);
@@ -167,8 +199,10 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
 
       return Right(count);
     } on DioException catch (e) {
+      print('🌐 [SYNC] ❌ Erro na API: ${e.message}');
       return Left(CacheFailure('Erro na API: ${e.message}'));
     } catch (e) {
+      print('🌐 [SYNC] ❌ Erro na sincronização: $e');
       return Left(CacheFailure('Erro ao sincronizar alimentos: $e'));
     }
   }
