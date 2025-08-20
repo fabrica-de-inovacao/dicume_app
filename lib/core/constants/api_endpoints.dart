@@ -1,8 +1,4 @@
 class ApiEndpoints {
-  // Base URLs
-  static const String baseUrl = 'http://192.168.2.8:5050/api/v1';
-  static const String baseUrlDev = 'http://192.168.2.8:5050/api/v1';
-
   // Health Check
   static const String healthCheck = '/';
   static const String docs = '/docs';

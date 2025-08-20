@@ -1,12 +1,12 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../presentation/screens/buscar/buscar_alimento_screen.dart';
 import '../../presentation/screens/splash/splash_screen.dart';
 import '../../presentation/screens/onboarding/onboarding_screen.dart';
 import '../../presentation/screens/setup/setup_loading_screen.dart';
 import '../../presentation/screens/main/main_navigation_screen.dart';
 import '../../presentation/screens/home/home_screen_elegante.dart';
-import '../../presentation/screens/montar_prato/buscar_alimentos_screen.dart';
 import '../../presentation/screens/aprender/aprender_screen.dart';
 import '../../presentation/screens/montar_prato/montar_prato_virtual_screen.dart';
 import '../../presentation/screens/montar_prato/montar_prato_screen_v3.dart';
@@ -82,7 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Buscar Alimento (esquerda)
           GoRoute(
             path: AppRoutes.buscar,
-            builder: (context, state) => const BuscarAlimentosScreen(),
+            builder: (context, state) => const BuscarAlimentoScreen (),
           ), // Home Elegante (centro)
           GoRoute(
             path: AppRoutes.home,

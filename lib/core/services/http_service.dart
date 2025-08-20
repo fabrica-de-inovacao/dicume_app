@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dicume_app/core/constants/app_constants.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../constants/api_endpoints.dart';
@@ -15,7 +16,7 @@ class HttpService {
   void initialize() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: kDebugMode ? ApiEndpoints.baseUrlDev : ApiEndpoints.baseUrl,
+        baseUrl: kDebugMode ? AppConstants.apiBaseDevUrl : AppConstants.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 30),

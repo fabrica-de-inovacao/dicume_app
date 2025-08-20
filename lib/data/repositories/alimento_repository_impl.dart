@@ -190,6 +190,28 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
           'alimento_foto_$intId',
           alimentoModel.fotoPorcaoUrl,
         );
+        // Salva também a recomendação de consumo no cache para preservar o valor da API
+        await databaseService.setCacheValue(
+          'alimento_recomendacao_$intId',
+          alimentoModel.recomendacaoConsumo,
+        );
+        // Salva a classificação do semáforo e outros metadados para reconstruir a entidade corretamente
+        await databaseService.setCacheValue(
+          'alimento_classificacao_$intId',
+          alimentoModel.classificacaoCor,
+        );
+        await databaseService.setCacheValue(
+          'alimento_grupo_nutricional_$intId',
+          alimentoModel.grupoNutricional,
+        );
+        await databaseService.setCacheValue(
+          'alimento_ig_classificacao_$intId',
+          alimentoModel.igClassificacao,
+        );
+        await databaseService.setCacheValue(
+          'alimento_guia_class_$intId',
+          alimentoModel.guiaAlimentarClass,
+        );
         count++;
 
         if (count % 20 == 0) {
@@ -249,25 +271,56 @@ class AlimentoRepositoryImpl implements AlimentoRepository {
   }) async {
     // Se temos o ID original (UUID), usa ele; senão converte o int para string
     final alimentoId = originalId ?? alimentoDb.id.toString();
-    // Tenta recuperar a URL da foto do cache (se existir)
+    // Tenta recuperar a URL da foto, recomendação, classificação e metadados do cache (se existirem)
     String fotoUrl = '';
+    String recomendacao = '';
+    String classificacao = '';
+    String grupoNutricional = '';
+    String igClass = '';
+    String guiaClass = '';
     try {
-      final cached = await databaseService.getCacheValue(
+      final cachedFoto = await databaseService.getCacheValue(
         'alimento_foto_${alimentoDb.id}',
       );
-      if (cached != null) fotoUrl = cached;
+      if (cachedFoto != null) fotoUrl = cachedFoto;
+
+      final cachedRec = await databaseService.getCacheValue(
+        'alimento_recomendacao_${alimentoDb.id}',
+      );
+      if (cachedRec != null) recomendacao = cachedRec;
+      final cachedClass = await databaseService.getCacheValue(
+        'alimento_classificacao_${alimentoDb.id}',
+      );
+      if (cachedClass != null) classificacao = cachedClass;
+
+      final cachedGrupoNut = await databaseService.getCacheValue(
+        'alimento_grupo_nutricional_${alimentoDb.id}',
+      );
+      if (cachedGrupoNut != null) grupoNutricional = cachedGrupoNut;
+
+      final cachedIg = await databaseService.getCacheValue(
+        'alimento_ig_classificacao_${alimentoDb.id}',
+      );
+      if (cachedIg != null) igClass = cachedIg;
+
+      final cachedGuia = await databaseService.getCacheValue(
+        'alimento_guia_class_${alimentoDb.id}',
+      );
+      if (cachedGuia != null) guiaClass = cachedGuia;
     } catch (_) {}
 
     return entities.Alimento(
       id: alimentoId,
       nomePopular: alimentoDb.nome,
       grupoDicume: alimentoDb.categoria,
-      classificacaoCor: 'verde', // Será implementado depois com dados reais
-      recomendacaoConsumo: '1 porção',
+      // Usa valores vindos do cache quando disponíveis, senão mantém valores padrão razoáveis
+      classificacaoCor: classificacao.isNotEmpty ? classificacao : 'verde',
+      recomendacaoConsumo: recomendacao.isNotEmpty ? recomendacao : '1 porção',
       fotoPorcaoUrl: fotoUrl,
-      grupoNutricional: 'Carboidrato',
-      igClassificacao: 'baixo',
-      guiaAlimentarClass: 'in_natura',
+      grupoNutricional:
+          grupoNutricional.isNotEmpty ? grupoNutricional : 'Carboidrato',
+      igClassificacao: igClass.isNotEmpty ? igClass : 'baixo',
+      guiaAlimentarClass: guiaClass.isNotEmpty ? guiaClass : 'in_natura',
       isFavorito: alimentoDb.isFavorito,
       createdAt: alimentoDb.createdAt,
       updatedAt: alimentoDb.updatedAt,

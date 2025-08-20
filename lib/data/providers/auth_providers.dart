@@ -27,8 +27,8 @@ final dioProvider = Provider<Dio>((ref) {
     BaseOptions(
       baseUrl:
           AppConstants.isDevelopment
-              ? ApiEndpoints.baseUrlDev
-              : ApiEndpoints.baseUrl,
+              ? AppConstants.apiBaseDevUrl
+              : AppConstants.apiBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
