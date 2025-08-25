@@ -16,7 +16,8 @@ class HttpService {
   void initialize() {
     _dio = Dio(
       BaseOptions(
-        baseUrl: kDebugMode ? AppConstants.apiBaseDevUrl : AppConstants.apiBaseUrl,
+        baseUrl:
+            kDebugMode ? AppConstants.apiBaseDevUrl : AppConstants.apiBaseUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 30),
         sendTimeout: const Duration(seconds: 30),
@@ -45,10 +46,14 @@ class HttpService {
           handler.next(options);
         },
         onError: (error, handler) async {
-          // Auto-retry para alguns erros
+          // Não executamos logout automático aqui para evitar apagar o token
+          // durante um ciclo de requisição que ainda precisa do token para
+          // inspecionar a resposta. Em vez disso, apenas logamos e propagamos
+          // o erro para que o fluxo de alto nível trate a autenticação.
           if (error.response?.statusCode == 401) {
-            // Token expirado, tentar refresh ou logout
-            await _authService.logout();
+            debugPrint(
+              '[HTTP] 401 recebido no interceptor; propagando para tratamento de login/refresh',
+            );
           }
           handler.next(error);
         },

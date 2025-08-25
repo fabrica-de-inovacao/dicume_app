@@ -19,7 +19,7 @@ class ApiEndpoints {
   static const String dadosAlimentos = '/dados/alimentos';
 
   // Diary
-  static const String diarioRefeicoes = '/diario/refeicoes';
+  static const String diarioRefeicoes = '/diario/alimentos';
   static String diarioRefeicoesByData(String data) => '/diario/refeicoes/$data';
 
   // Headers

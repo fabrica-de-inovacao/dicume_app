@@ -8,8 +8,11 @@ import '../../../core/services/feedback_service.dart';
 import '../../../core/services/mock_data_service_regional.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/api_service.dart';
+import '../../../core/services/http_service.dart';
+import '../../../data/providers/alimento_providers.dart';
 import '../../../data/providers/refeicao_providers.dart';
 import '../../../domain/entities/refeicao.dart';
+import '../../../domain/entities/alimento.dart';
 import '../auth/auth_modal_screen.dart';
 
 class MontarPratoVirtualScreen extends ConsumerStatefulWidget {
@@ -23,7 +26,8 @@ class MontarPratoVirtualScreen extends ConsumerStatefulWidget {
 class _MontarPratoVirtualScreenState
     extends ConsumerState<MontarPratoVirtualScreen>
     with TickerProviderStateMixin {
-  final mockService = SuperMockDataService();
+  // Usar cache local / repositório de alimentos em vez do mock
+  // final mockService = SuperMockDataService();
   late AnimationController _plateController;
   late Animation<double> _plateScale;
 
@@ -522,7 +526,8 @@ class _MontarPratoVirtualScreenState
   }
 
   Widget _buildListaAlimentos(TextTheme textTheme) {
-    final grupos = mockService.getGrupos();
+    // Obter alimentos do cache local via provider
+    final alimentosAsync = ref.watch(alimentosCacheProvider);
 
     return DicumeElegantCard(
       margin: const EdgeInsets.all(16),
@@ -538,66 +543,112 @@ class _MontarPratoVirtualScreenState
           ),
           const SizedBox(height: 16),
           Expanded(
-            child: ListView.builder(
-              itemCount: grupos.length,
-              itemBuilder: (context, index) {
-                final grupo = grupos[index];
-                final alimentos = mockService.getAlimentosPorGrupo(grupo['id']);
+            child: alimentosAsync.when(
+              data: (alimentos) {
+                // Esperamos uma lista de Alimento
+                final List<Alimento> alimentosList =
+                    (alimentos as List).cast<Alimento>();
+                // Agrupar por grupoDicume
+                final Map<String, List<Alimento>> grupos = {};
+                for (final a in alimentosList) {
+                  final grupo = a.grupoDicume;
+                  final key = grupo.isNotEmpty ? grupo : 'Outros';
+                  grupos.putIfAbsent(key, () => []).add(a);
+                }
 
-                return ExpansionTile(
-                  title: Text(
-                    grupo['nome'],
-                    style: textTheme.titleSmall?.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  subtitle: Text(
-                    '${alimentos.length} alimentos disponíveis',
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      grupo['icone'] ?? '🍽️',
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-                  children:
-                      alimentos.map((alimento) {
-                        return ListTile(
-                          dense: true,
-                          title: Text(
-                            alimento.nome,
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          subtitle: Text(
-                            alimento.descricao,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                          leading: DicumeSemaforoNutricional(
-                            nivel: alimento.semaforo,
-                            descricao: '',
-                          ),
-                          trailing: IconButton(
-                            onPressed: () => _adicionarAlimento(alimento),
-                            icon: const Icon(Icons.add_circle_outline),
-                            color: AppColors.primary,
-                          ),
-                        );
-                      }).toList(),
+                final grupoEntries = grupos.entries.toList();
+
+                return ListView.builder(
+                  itemCount: grupoEntries.length,
+                  itemBuilder: (context, index) {
+                    final grupoNome = grupoEntries[index].key;
+                    final alimentosDoGrupo = grupoEntries[index].value;
+
+                    return ExpansionTile(
+                      title: Text(
+                        grupoNome,
+                        style: textTheme.titleSmall?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      subtitle: Text(
+                        '${alimentosDoGrupo.length} alimentos disponíveis',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.restaurant_menu, size: 20),
+                      ),
+                      children:
+                          alimentosDoGrupo.map<Widget>((alimento) {
+                            final id = alimento.id.toString();
+                            final nome = alimento.nomePopular;
+                            final grupoId = alimento.grupoDicume;
+                            final recomendacao = alimento.recomendacaoConsumo;
+                            final classificacao =
+                                alimento.classificacaoCor.isNotEmpty
+                                    ? alimento.classificacaoCor
+                                    : 'neutro';
+                            final foto = alimento.fotoPorcaoUrl;
+
+                            return ListTile(
+                              dense: true,
+                              title: Text(
+                                nome,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              subtitle: Text(
+                                recomendacao,
+                                style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              leading: DicumeSemaforoNutricional(
+                                nivel: classificacao,
+                                descricao: '',
+                              ),
+                              trailing: IconButton(
+                                onPressed: () {
+                                  // Criar objeto compatível com AlimentoNutricional usado no prato
+                                  final item = AlimentoNutricional(
+                                    id: id,
+                                    nome: nome,
+                                    grupoId: grupoId,
+                                    calorias: 0.0,
+                                    carboidratos: 0.0,
+                                    proteinas: 0.0,
+                                    gorduras: 0.0,
+                                    fibras: 0.0,
+                                    sodio: 0.0,
+                                    semaforo: classificacao,
+                                    descricao: recomendacao,
+                                    imagemUrl: foto,
+                                  );
+
+                                  _adicionarAlimento(item);
+                                },
+                                icon: const Icon(Icons.add_circle_outline),
+                                color: AppColors.primary,
+                              ),
+                            );
+                          }).toList(),
+                    );
+                  },
                 );
               },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error:
+                  (e, s) =>
+                      Center(child: Text('Erro ao carregar alimentos: $e')),
             ),
           ),
         ],
@@ -741,8 +792,27 @@ class _MontarPratoVirtualScreenState
         '[MONTAR_PRATO] Usuário está logado, tentando salvar na API...',
       );
 
-      // Usuário está logado, tentar salvar na API
-      await _salvarNaAPI();
+      // Usuário está logado, tentar salvar na API usando helper que monta payload
+      try {
+        await _salvarNaAPI();
+      } on AppException catch (e) {
+        if (e.type == AppExceptionType.auth) {
+          debugPrint(
+            '[MONTAR_PRATO] AppException auth recebido, solicitando login e re-tentando',
+          );
+          if (mounted) {
+            final authenticated = await showAuthModal(context);
+            if (!authenticated) {
+              throw Exception('Acesso negado. Faça login novamente.');
+            }
+
+            // Re-tentar
+            await _salvarNaAPI();
+          }
+        } else {
+          rethrow;
+        }
+      }
 
       debugPrint(
         '[MONTAR_PRATO] Salvo na API com sucesso, salvando localmente...',
@@ -784,10 +854,10 @@ class _MontarPratoVirtualScreenState
     // Converter alimentos para formato da API
     final itens =
         pratoAtual.map((alimento) {
+          // Enviar o id tal como está no mock (String). A API aceita strings/UUIDs.
           return RefeicaoItem(
-            alimentoId:
-                int.tryParse(alimento.id) ?? 0, // Converter String para int
-            quantidadeBase: 1.0, // Quantidade padrão
+            alimentoId: alimento.id.toString(),
+            quantidadeBase: 1.0,
           );
         }).toList();
 
@@ -812,6 +882,14 @@ class _MontarPratoVirtualScreenState
     );
 
     if (!result.success) {
+      // Se o erro for de autenticação, transformar em AppException para ser
+      // capturado no chamador e permitir reautenticação.
+      if (result.errorType == AppExceptionType.auth) {
+        throw AppException(
+          result.error ?? 'Acesso negado',
+          type: AppExceptionType.auth,
+        );
+      }
       throw Exception(result.error ?? 'Erro ao salvar na API');
     }
   }

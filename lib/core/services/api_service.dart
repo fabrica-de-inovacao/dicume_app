@@ -499,13 +499,18 @@ class ApiAlimento {
 }
 
 class RefeicaoItem {
-  final int alimentoId;
+  // Usamos String aqui para suportar UUIDs (ex.: "462e295f-...")
+  final String alimentoId;
   final double quantidadeBase;
 
   RefeicaoItem({required this.alimentoId, required this.quantidadeBase});
 
   Map<String, dynamic> toJson() {
-    return {'alimento_id': alimentoId, 'quantidade_base': quantidadeBase};
+    // Garantir que o id venha como string para a API
+    return {
+      'alimento_id': alimentoId.toString(),
+      'quantidade_base': quantidadeBase,
+    };
   }
 }
 

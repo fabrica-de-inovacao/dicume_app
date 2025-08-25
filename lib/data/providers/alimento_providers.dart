@@ -2,6 +2,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/repositories/alimento_repository.dart';
+import '../../domain/entities/alimento.dart';
 import '../repositories/alimento_repository_impl.dart';
 import '../datasources/alimento_remote_datasource.dart';
 import 'auth_providers.dart';
@@ -45,7 +46,7 @@ AlimentoRepository alimentoRepository(Ref ref) {
 @riverpod
 class AlimentosCache extends _$AlimentosCache {
   @override
-  Future<List<Object?>> build() async {
+  Future<List<Alimento>> build() async {
     print('📦 [CACHE] Inicializando cache de alimentos...');
     final repository = ref.watch(alimentoRepositoryProvider);
 
