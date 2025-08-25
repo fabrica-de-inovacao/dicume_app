@@ -11,6 +11,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/utils/auth_utils.dart';
 import '../../../data/providers/alimento_providers.dart';
 import '../../controllers/auth_controller.dart';
+import '../../widgets/home_banner_carousel.dart';
 
 class HomeScreenElegante extends ConsumerStatefulWidget {
   const HomeScreenElegante({super.key});
@@ -75,16 +76,16 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
                 _buildCabecalhoUsuario(textTheme, authState),
                 const SizedBox(height: 24),
 
-                // Saudação e mensagem amigável
-                _buildSaudacao(textTheme),
-                const SizedBox(height: 24),
-
-                // PRIORIDADE 1: Semáforo do dia (logo após saudação)
-                _buildSemaforoEstatisticas(textTheme),
-                const SizedBox(height: 24),
-
-                // PRIORIDADE 2: Card CTA principal (DESTACADO)
+                // PRIORIDADE 1: Card CTA principal (DESTACADO)
                 _buildCardCTADestacado(context, textTheme),
+                const SizedBox(height: 24),
+
+                // Carrossel de Banners
+                const HomeBannerCarousel(),
+                const SizedBox(height: 24),
+
+                // PRIORIDADE 2: Semáforo do dia (logo após saudação)
+                _buildSemaforoEstatisticas(textTheme),
                 const SizedBox(height: 24),
 
                 // Atalho "Seu Dia Hoje"
@@ -101,44 +102,87 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
     );
   }
 
-  Widget _buildSaudacao(TextTheme textTheme) {
-    return DicumeElegantCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+  Widget _buildCardCTADestacado(BuildContext context, TextTheme textTheme) {
+    return Container(
+      height: 180,
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(24),
+          onTap: () async {
+            await FeedbackService().strongTap();
+            if (mounted) {
+              final isAuthenticated = await AuthUtils.requireAuthentication(
+                context,
+                ref,
+                message:
+                    'Para montar um prato e salvá-lo, você precisa estar logado.',
+              );
+              if (isAuthenticated && mounted) {
+                context.go(AppRoutes.montarPratoVirtual);
+              }
+            }
+          },
+          child: Stack(
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppColors.successLight,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.waving_hand,
-                  color: AppColors.success,
-                  size: 24,
+              Positioned(
+                right: -20,
+                bottom: -20,
+                child: Icon(
+                  Icons.restaurant_menu_rounded,
+                  size: 120,
+                  color: Colors.white.withOpacity(0.1),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
+              Padding(
+                padding: const EdgeInsets.all(24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: _handleDeveloperTap,
-                      child: Text(
-                        'Oi, que bom te ver!',
-                        style: textTheme.titleLarge?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
+                    Text(
+                      'Hora de Montar o Prato!',
+                      style: textTheme.headlineSmall?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                     Text(
-                      'Vamos montar um prato saudável hoje?',
+                      'Crie uma refeição saudável e balanceada em poucos passos.',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: Colors.white.withOpacity(0.9),
+                        height: 1.4,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomRight,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Começar Agora',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -146,206 +190,15 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Text(
-            'O DICUMÊ te ajuda a controlar o índice glicêmico dos alimentos! Verde para baixo IG (pode à vontade), amarelo para moderado (com equilíbrio), vermelho para alto IG (só um pouquinho).',
-            style: textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
-            ),
-          ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildCardCTADestacado(BuildContext context, TextTheme textTheme) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 800),
-      curve: Curves.elasticOut,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: 0.8 + (0.2 * value),
-          child: Container(
-            height: 200, // Mais altura para destaque
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  AppColors.primary,
-                  AppColors.primaryDark,
-                  Color(0xFF4A6CF7), // Tom mais vibrante
-                ],
-                stops: [0.0, 0.6, 1.0],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.3),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  blurRadius: 40,
-                  offset: const Offset(0, 16),
-                ),
-              ],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () async {
-                  await FeedbackService().strongTap(); // Feedback mais forte
-                  if (mounted) {
-                    // Verificar se o usuário está autenticado
-                    final isAuthenticated = await AuthUtils.requireAuthentication(
-                      context,
-                      ref,
-                      message:
-                          'Para montar um prato e salvá-lo, você precisa estar logado.',
-                    );
-
-                    if (isAuthenticated && mounted) {
-                      context.go(AppRoutes.montarPratoVirtual);
-                    }
-                  }
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Row(
-                    children: [
-                      // Ícone animado com pulso
-                      TweenAnimationBuilder<double>(
-                        tween: Tween(begin: 0.8, end: 1.2),
-                        duration: const Duration(milliseconds: 1500),
-                        curve: Curves.easeInOut,
-                        builder: (context, scale, child) {
-                          return Transform.scale(
-                            scale: scale,
-                            child: Container(
-                              padding: const EdgeInsets.all(20),
-                              decoration: BoxDecoration(
-                                color: AppColors.onPrimary.withValues(
-                                  alpha: 0.2,
-                                ),
-                                borderRadius: BorderRadius.circular(24),
-                                border: Border.all(
-                                  color: AppColors.onPrimary.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  width: 2,
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.restaurant_menu,
-                                size: 52,
-                                color: AppColors.onPrimary,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 20), // Textos
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Título com shimmer effect
-                            ShaderMask(
-                              shaderCallback:
-                                  (bounds) => const LinearGradient(
-                                    colors: [
-                                      Colors.white,
-                                      Color(0xFFF0F8FF),
-                                      Colors.white,
-                                    ],
-                                    stops: [0.0, 0.5, 1.0],
-                                  ).createShader(bounds),
-                              child: Text(
-                                'Bora Montar\no Prato!',
-                                style: textTheme.headlineLarge?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.0,
-                                  fontSize: 28,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-
-                            // Subtítulo motivacional
-                            Text(
-                              'Crie um prato saudável e\nbalanceado agora mesmo',
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: AppColors.onPrimary.withValues(
-                                  alpha: 0.9,
-                                ),
-                                height: 1.2,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-
-                            // Badge motivacional
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.onPrimary.withValues(
-                                  alpha: 0.2,
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.onPrimary.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.flash_on,
-                                    size: 14,
-                                    color: AppColors.onPrimary,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'Rápido e fácil',
-                                    style: textTheme.bodySmall?.copyWith(
-                                      color: AppColors.onPrimary,
-                                      fontWeight: FontWeight.w600,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
   Widget _buildSemaforoEstatisticas(TextTheme textTheme) {
     // Calcula o status geral do dia baseado no índice glicêmico
     String statusDia = _calcularStatusDia();
-    Color corStatus = _getCorStatus(statusDia);
+    _getCorStatus(statusDia);
 
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.0, end: 1.0),
@@ -362,7 +215,16 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
                 children: [
                   // Header com animação
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      // Título com destaque
+                      Text(
+                        'Seu Dia Hoje',
+                        style: textTheme.titleLarge?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       // Semáforo com pulso
                       TweenAnimationBuilder<double>(
                         tween: Tween(begin: 0.9, end: 1.1),
@@ -377,46 +239,6 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
                             ),
                           );
                         },
-                      ),
-                      const SizedBox(width: 16),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Título com destaque
-                            Text(
-                              'Seu Dia Hoje',
-                              style: textTheme.titleLarge?.copyWith(
-                                color: AppColors.textPrimary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-
-                            // Status com cor dinâmica
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: corStatus.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: corStatus.withValues(alpha: 0.3),
-                                ),
-                              ),
-                              child: Text(
-                                _getDescricaoStatus(statusDia),
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: corStatus,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -670,14 +492,23 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
               child: CircleAvatar(
                 radius: 24,
                 backgroundColor: AppColors.primaryLight,
-                child: Text(
-                  iniciais,
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                backgroundImage:
+                    (authState?.user?.avatarUrl != null &&
+                            authState!.user!.avatarUrl!.isNotEmpty)
+                        ? NetworkImage(authState.user!.avatarUrl!)
+                        : null,
+                child:
+                    (authState?.user?.avatarUrl == null ||
+                            authState!.user!.avatarUrl!.isEmpty)
+                        ? Text(
+                          iniciais,
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        )
+                        : null,
               ),
             ),
             const SizedBox(width: 12),

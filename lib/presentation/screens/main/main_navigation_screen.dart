@@ -44,9 +44,7 @@ class MainNavigationScreen extends ConsumerWidget {
   }
 
   void _onTabTapped(BuildContext context, WidgetRef ref, int index) async {
-    // Feedback tátil para navegação entre tabs
-    await FeedbackService().lightTap();
-
+    // Navegação antes do async gap para evitar uso de BuildContext após await
     ref.read(selectedTabProvider.notifier).state = index;
     switch (index) {
       case 0:
@@ -62,6 +60,8 @@ class MainNavigationScreen extends ConsumerWidget {
         context.go(AppRoutes.aprender);
         break;
     }
+    // Feedback tátil para navegação entre tabs
+    await FeedbackService().lightTap();
   }
 
   void _mostrarConfirmacaoSaida(BuildContext context) {

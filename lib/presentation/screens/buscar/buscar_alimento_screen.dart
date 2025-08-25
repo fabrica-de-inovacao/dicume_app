@@ -933,7 +933,7 @@ class _BuscarAlimentoScreenState extends ConsumerState<BuscarAlimentoScreen> {
     Navigator.of(context).push(
       PageRouteBuilder(
         opaque: false,
-        barrierColor: Colors.black.withOpacity(0.85),
+        barrierColor: Colors.black.withValues(alpha: 0.85),
         pageBuilder: (context, animation, secondaryAnimation) {
           return GestureDetector(
             behavior: HitTestBehavior.opaque,

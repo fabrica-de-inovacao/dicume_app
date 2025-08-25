@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/services/feedback_service.dart';
-import '../../../core/services/auth_service.dart';
+// ...existing code...
 import '../../../core/services/database_service.dart';
 import '../../../core/database/database.dart';
 import '../../../core/utils/auth_utils.dart';
@@ -81,6 +81,8 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
     final nomeUsuario = authState.user?.nome ?? 'Usuário DICUMÊ';
     final emailUsuario = authState.user?.email ?? 'Bem-vindo ao app!';
 
+    final avatarUrl = authState.user?.avatarUrl;
+
     return DicumeElegantCard(
       child: Column(
         children: [
@@ -90,14 +92,21 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
               CircleAvatar(
                 radius: 40,
                 backgroundColor: AppColors.primaryLight,
-                child: Text(
-                  _getIniciais(nomeUsuario),
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                backgroundImage:
+                    (avatarUrl != null && avatarUrl.isNotEmpty)
+                        ? NetworkImage(avatarUrl)
+                        : null,
+                child:
+                    (avatarUrl == null || avatarUrl.isEmpty)
+                        ? Text(
+                          _getIniciais(nomeUsuario),
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                        : null,
               ),
               const SizedBox(width: 20),
               Expanded(
@@ -790,12 +799,17 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                   FeedbackService().mediumTap();
                   Navigator.of(context).pop();
 
-                  // Executar logout usando AuthService (método correto)
-                  await AuthService().logout();
-
-                  // Navegar para a tela de login após logout bem-sucedido
-                  if (context.mounted) {
-                    context.go('/login');
+                  // Usar AuthController para realizar signOut e propagar estado
+                  try {
+                    await ref.read(authControllerProvider.notifier).signOut();
+                    // Não navegar: permanecer na tela de perfil. O widget
+                    // já faz `ref.watch(authControllerProvider)` e irá
+                    // mostrar o estado deslogado automaticamente.
+                  } catch (e) {
+                    debugPrint(
+                      '[PERFIL] Erro ao fazer signOut via controller: $e',
+                    );
+                    await FeedbackService().errorFeedback();
                   }
                 },
                 child: const Text(

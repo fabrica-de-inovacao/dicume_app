@@ -7,23 +7,25 @@ import '../../../core/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../controllers/auth_controller.dart';
 
-class AuthModalScreen extends StatefulWidget {
+// Provider local para controlar estado de carregamento do modal
+final _authModalLoadingProvider = StateProvider<bool>((ref) => false);
+
+class AuthModalScreen extends ConsumerStatefulWidget {
   final VoidCallback? onSuccess;
   final VoidCallback? onCancel;
 
   const AuthModalScreen({super.key, this.onSuccess, this.onCancel});
 
   @override
-  State<AuthModalScreen> createState() => _AuthModalScreenState();
+  ConsumerState<AuthModalScreen> createState() => _AuthModalScreenState();
 }
 
 enum _AuthMethod { google, email }
 
-class _AuthModalScreenState extends State<AuthModalScreen> {
+class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
   final AuthService _authService = AuthService();
   final ApiService _apiService = ApiService();
-
-  bool _isLoading = false;
+  // _isLoading agora gerenciado por Riverpod (_authModalLoadingProvider)
   String? _errorMessage;
   // Email/Password fields
   final TextEditingController _emailController = TextEditingController();
@@ -33,11 +35,13 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
   bool _isSignup = false;
   Future<void> _signInWithGoogle() async {
     debugPrint('[AUTH_MODAL] Iniciando processo de login com Google...');
-
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    // marcar carregamento via provider
+    ref.read(_authModalLoadingProvider.notifier).state = true;
+    if (mounted) {
+      setState(() {
+        _errorMessage = null;
+      });
+    }
 
     try {
       debugPrint('[AUTH_MODAL] Passo 1: Fazendo login com Google...');
@@ -93,24 +97,24 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
     } catch (e) {
       debugPrint('[AUTH_MODAL] ERRO GERAL no processo de login: $e');
       debugPrint('[AUTH_MODAL] Tipo do erro: ${e.runtimeType}');
-
-      setState(() {
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-      });
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      }
       await FeedbackService().mediumTap();
     } finally {
       debugPrint('[AUTH_MODAL] Finalizando processo de login');
-      setState(() {
-        _isLoading = false;
-      });
+      // finalizar carregamento via provider
+      ref.read(_authModalLoadingProvider.notifier).state = false;
     }
   }
 
   Future<void> _signinWithEmail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    ref.read(_authModalLoadingProvider.notifier).state = true;
+    if (mounted) {
+      setState(() => _errorMessage = null);
+    }
 
     try {
       final email = _emailController.text.trim();
@@ -130,19 +134,21 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
         widget.onSuccess?.call();
       }
     } catch (e) {
-      setState(
-        () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
-      );
+      if (mounted) {
+        setState(
+          () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      ref.read(_authModalLoadingProvider.notifier).state = false;
     }
   }
 
   Future<void> _signupWithEmail() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    ref.read(_authModalLoadingProvider.notifier).state = true;
+    if (mounted) {
+      setState(() => _errorMessage = null);
+    }
 
     try {
       final email = _emailController.text.trim();
@@ -161,11 +167,13 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
       // Conta criada com sucesso, fazer signin automático
       await _signinWithEmail();
     } catch (e) {
-      setState(
-        () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
-      );
+      if (mounted) {
+        setState(
+          () => _errorMessage = e.toString().replaceAll('Exception: ', ''),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      ref.read(_authModalLoadingProvider.notifier).state = false;
     }
   }
 
@@ -178,6 +186,8 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Usar provider local para estado de carregamento
+    final isLoading = ref.watch(_authModalLoadingProvider);
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
 
@@ -352,10 +362,10 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
               SizedBox(
                 width: double.infinity,
                 child: DicumeElegantButton(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
-                  text: _isLoading ? 'Entrando...' : 'Entrar com Google',
-                  icon: _isLoading ? null : Icons.login,
-                  isLoading: _isLoading,
+                  onPressed: isLoading ? null : _signInWithGoogle,
+                  text: isLoading ? 'Entrando...' : 'Entrar com Google',
+                  icon: isLoading ? null : Icons.login,
+                  isLoading: isLoading,
                 ),
               ),
               const SizedBox(height: 12),
@@ -374,14 +384,14 @@ class _AuthModalScreenState extends State<AuthModalScreen> {
                 width: double.infinity,
                 child: DicumeElegantButton(
                   onPressed:
-                      _isLoading
+                      isLoading
                           ? null
                           : (_isSignup ? _signupWithEmail : _signinWithEmail),
                   text:
-                      _isLoading
+                      isLoading
                           ? (_isSignup ? 'Criando conta...' : 'Entrando...')
                           : (_isSignup ? 'Criar Conta' : 'Entrar'),
-                  isLoading: _isLoading,
+                  isLoading: isLoading,
                 ),
               ),
               const SizedBox(height: 8),

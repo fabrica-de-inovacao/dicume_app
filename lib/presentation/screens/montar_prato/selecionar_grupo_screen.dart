@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../domain/entities/grupo_alimento.dart';
 import '../../../core/providers/feedback_providers.dart';
-import 'buscar_alimentos_screen.dart';
+import '../buscar/buscar_alimento_screen.dart';
 
 class SelecionarGrupoScreen extends ConsumerWidget {
   const SelecionarGrupoScreen({super.key});
@@ -138,7 +138,7 @@ class SelecionarGrupoScreen extends ConsumerWidget {
               // Navegar para lista de alimentos do grupo
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => const BuscarAlimentosScreen(),
+                  builder: (context) => const BuscarAlimentoScreen(),
                 ),
               );
             }
@@ -153,9 +153,12 @@ class SelecionarGrupoScreen extends ConsumerWidget {
                   width: 64,
                   height: 64,
                   decoration: BoxDecoration(
-                    color: cor.withOpacity(0.1),
+                    color: cor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
-                    border: Border.all(color: cor.withOpacity(0.3), width: 2),
+                    border: Border.all(
+                      color: cor.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
                   ),
                   child: Center(
                     child: Text(
@@ -208,7 +211,7 @@ class SelecionarGrupoScreen extends ConsumerWidget {
                             vertical: 2,
                           ),
                           decoration: BoxDecoration(
-                            color: cor.withOpacity(0.1),
+                            color: cor.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
