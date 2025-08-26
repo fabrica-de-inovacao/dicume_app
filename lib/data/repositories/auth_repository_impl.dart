@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -160,9 +161,14 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<User?> getCurrentUser() async {
     try {
+      debugPrint('🔍 [REPO] getCurrentUser: iniciado');
       final userModel = await localDataSource.getCachedUser();
-      return userModel?.toEntity();
+      debugPrint('🔍 [REPO] getCachedUser retornou: ${userModel?.toJson()}');
+      final user = userModel?.toEntity();
+      debugPrint('🔍 [REPO] getCurrentUser retornará: ${user?.nome}');
+      return user;
     } catch (e) {
+      debugPrint('🔍 [REPO] Erro em getCurrentUser: $e');
       return null;
     }
   }
@@ -170,16 +176,26 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<bool> isAuthenticated() async {
     try {
+      debugPrint('🔍 [REPO] isAuthenticated: iniciado');
       final user = await getCurrentUser();
       final token = await getCurrentToken();
 
+      debugPrint('🔍 [REPO] user is null? ${user == null}');
+      debugPrint('🔍 [REPO] token is null? ${token == null}');
+
       if (user == null || token == null) {
+        debugPrint('🔍 [REPO] isAuthenticated: false (user ou token null)');
         return false;
       }
 
+      debugPrint('🔍 [REPO] token.isExpired: ${token.isExpired}');
+      final result = !token.isExpired;
+      debugPrint('🔍 [REPO] isAuthenticated resultado final: $result');
+
       // Verifica se o token não expirou
-      return !token.isExpired;
+      return result;
     } catch (e) {
+      debugPrint('🔍 [REPO] Erro em isAuthenticated: $e');
       return false;
     }
   }

@@ -1,16 +1,16 @@
-import 'package:flutter/foundation.dart';
+import 'dart:core';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/services/feedback_service.dart';
-// ...existing code...
-import '../../../core/services/database_service.dart';
-import '../../../core/database/database.dart';
 import '../../../core/utils/auth_utils.dart';
 import '../../controllers/auth_controller.dart';
 import 'edit_profile_bottom_sheet.dart';
+import '../../../data/providers/refeicao_providers.dart';
+import '../../../data/models/perfil_status_model.dart';
 
 class PerfilUsuarioScreen extends ConsumerStatefulWidget {
   const PerfilUsuarioScreen({super.key});
@@ -26,12 +26,13 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
     final theme = Theme.of(context);
     final authState = ref.watch(authControllerProvider);
     final textTheme = theme.textTheme;
+    final perfilStatusAsync = ref.watch(perfilStatusProvider);
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
           FeedbackService().lightTap();
-          // Em vez de só navegar, vamos usar o roteador corretamente
           if (context.mounted) {
             context.go('/home');
           }
@@ -62,14 +63,28 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
           child: Column(
             children: [
               if (authState.isAuthenticated) ...[
-                _buildPerfilLogado(textTheme, authState),
-                const SizedBox(height: 24),
-                _buildEstatisticasUsuario(textTheme),
-                const SizedBox(height: 24),
-                _buildOpcoesConfiguracoes(textTheme, authState),
-              ] else ...[
+                perfilStatusAsync.when(
+                  data:
+                      (perfilStatus) => _buildPerfilLogado(
+                        textTheme,
+                        authState,
+                        perfilStatus,
+                      ),
+                  loading: () => _buildLoadingPerfilLogado(textTheme),
+                  error:
+                      (err, stack) =>
+                          _buildErrorPerfilLogado(textTheme, err.toString()),
+                ),
+              ] else
                 _buildPerfilDeslogado(textTheme),
-              ],
+
+              const SizedBox(height: 24),
+
+              // Opções de configuração
+              if (authState.isAuthenticated)
+                _buildOpcoesConfiguracoes(textTheme, authState)
+              else
+                _buildOpcoesBasicas(textTheme),
             ],
           ),
         ),
@@ -77,99 +92,89 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
     );
   }
 
-  Widget _buildPerfilLogado(TextTheme textTheme, AuthState authState) {
-    final nomeUsuario = authState.user?.nome ?? 'Usuário DICUMÊ';
-    final emailUsuario = authState.user?.email ?? 'Bem-vindo ao app!';
-
-    final avatarUrl = authState.user?.avatarUrl;
-
-    return DicumeElegantCard(
-      child: Column(
-        children: [
-          // Foto e informações básicas
-          Row(
+  Widget _buildPerfilLogado(
+    TextTheme textTheme,
+    AuthState authState,
+    PerfilStatusModel perfilStatus,
+  ) {
+    return Column(
+      children: [
+        // Header do perfil
+        DicumeElegantCard(
+          child: Column(
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.primaryLight,
-                backgroundImage:
-                    (avatarUrl != null && avatarUrl.isNotEmpty)
-                        ? NetworkImage(avatarUrl)
-                        : null,
-                child:
-                    (avatarUrl == null || avatarUrl.isEmpty)
-                        ? Text(
-                          _getIniciais(nomeUsuario),
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
+              // Avatar e informações básicas
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: _editarPerfil,
+                    child: CircleAvatar(
+                      radius: 32,
+                      backgroundColor: AppColors.primaryLight,
+                      backgroundImage:
+                          (authState.user?.avatarUrl != null &&
+                                  authState.user!.avatarUrl!.isNotEmpty)
+                              ? NetworkImage(authState.user!.avatarUrl!)
+                              : null,
+                      child:
+                          (authState.user?.avatarUrl == null ||
+                                  authState.user!.avatarUrl!.isEmpty)
+                              ? Text(
+                                _getIniciais(authState.user?.nome ?? 'Usuário'),
+                                style: textTheme.titleLarge?.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              )
+                              : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authState.user?.nome ?? 'Usuário',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
                           ),
-                        )
-                        : null,
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      nomeUsuario,
-                      style: textTheme.titleLarge?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      emailUsuario,
-                      style: textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.successLight,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        'Usando o DICUMÊ',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.success,
-                          fontWeight: FontWeight.w600,
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          authState.user?.email ?? '',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    onPressed: _editarPerfil,
+                    icon: const Icon(
+                      Icons.edit_outlined,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          const SizedBox(height: 20),
+        ),
+        const SizedBox(height: 16),
 
-          // Botão editar perfil
-          SizedBox(
-            width: double.infinity,
-            child: DicumeElegantButton(
-              text: 'Editar Perfil',
-              onPressed: () {
-                FeedbackService().lightTap();
-                _editarPerfil();
-              },
-              isOutlined: true,
-            ),
-          ),
-        ],
-      ),
+        // Card de estatísticas com dados reais
+        _buildEstatisticasComDados(textTheme, perfilStatus),
+      ],
     );
   }
 
-  Widget _buildEstatisticasUsuario(TextTheme textTheme) {
+  Widget _buildEstatisticasComDados(
+    TextTheme textTheme,
+    PerfilStatusModel perfilStatus,
+  ) {
     return DicumeElegantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -188,202 +193,169 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
             ],
           ),
           const SizedBox(height: 20),
-
-          // Carregar estatísticas a partir do banco local (Refeições)
-          FutureBuilder<List<Refeicoe>>(
-            future: ref.read(databaseServiceProvider).getAllRefeicoes(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                );
-              }
-
-              final refeicoes = snapshot.data ?? <Refeicoe>[];
-
-              // Total de refeições registradas
-              final totalRefeicoes = refeicoes.length;
-
-              // Calcular dias distintos com refeições e streak atual (dias consecutivos até hoje)
-              final dateSet = <DateTime>{};
-              for (final r in refeicoes) {
-                final d = DateTime(
-                  r.dataHora.year,
-                  r.dataHora.month,
-                  r.dataHora.day,
-                );
-                dateSet.add(d);
-              }
-
-              int streak = 0;
-              DateTime day = DateTime.now();
-              day = DateTime(day.year, day.month, day.day);
-              while (dateSet.contains(day)) {
-                streak++;
-                day = day.subtract(const Duration(days: 1));
-              }
-
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildEstatisticaCard(
-                          icone: Icons.restaurant_menu,
-                          valor: totalRefeicoes.toString(),
-                          label: 'Refeições\nRegistradas',
-                          cor: AppColors.primary,
+          Row(
+            children: [
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.restaurant_menu,
+                  valor: '${perfilStatus.totalRefeicoes}',
+                  label: 'Refeições\nRegistradas',
+                  cor: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.local_fire_department,
+                  valor: '${perfilStatus.diasConsecutivos}',
+                  label: 'Dias\nConsecutivos',
+                  cor: AppColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flag, color: AppColors.success, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Meta Atual',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: AppColors.success,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildEstatisticaCard(
-                          icone: Icons.local_fire_department,
-                          valor: streak.toString(),
-                          label: 'Dias\nConsecutivos',
-                          cor: AppColors.warning,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Meta atual (texto estático por enquanto)
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: AppColors.successLight,
-                      borderRadius: BorderRadius.circular(12),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Manter um padrão alimentar equilibrado com foco em alimentos de baixo índice glicêmico',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLoadingPerfilLogado(TextTheme textTheme) {
+    return Column(
+      children: [
+        // Header do perfil loading
+        DicumeElegantCard(
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(radius: 32, backgroundColor: AppColors.grey200),
+                  const SizedBox(width: 16),
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.flag,
-                              color: AppColors.success,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Meta Atual',
-                                style: textTheme.titleSmall?.copyWith(
-                                  color: AppColors.success,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            IconButton(
-                              tooltip: 'Editar meta',
-                              icon: const Icon(
-                                Icons.edit,
-                                color: AppColors.success,
-                                size: 20,
-                              ),
-                              onPressed: () async {
-                                // Carregar meta atual
-                                final current = await ref
-                                    .read(databaseServiceProvider)
-                                    .getCacheValue('meta_atual');
-
-                                final controller = TextEditingController(
-                                  text: current ?? '',
-                                );
-
-                                final result = await showDialog<bool>(
-                                  context: context,
-                                  builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text('Editar Meta'),
-                                      content: TextField(
-                                        controller: controller,
-                                        maxLength: 80,
-                                        decoration: const InputDecoration(
-                                          hintText:
-                                              'Ex: Controlar carboidratos em cada refeição',
-                                        ),
-                                        autofocus: true,
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          onPressed:
-                                              () => Navigator.of(
-                                                context,
-                                              ).pop(false),
-                                          child: const Text('Cancelar'),
-                                        ),
-                                        TextButton(
-                                          onPressed: () async {
-                                            final meta = controller.text.trim();
-                                            try {
-                                              await ref
-                                                  .read(databaseServiceProvider)
-                                                  .setCacheValue(
-                                                    'meta_atual',
-                                                    meta,
-                                                  );
-                                              await FeedbackService()
-                                                  .successFeedback();
-                                              Navigator.of(context).pop(true);
-                                            } catch (e) {
-                                              await FeedbackService()
-                                                  .errorFeedback();
-                                            }
-                                          },
-                                          child: const Text('Salvar'),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                );
-
-                                if (result == true) {
-                                  setState(() {});
-                                }
-                              },
-                            ),
-                          ],
+                        Container(
+                          height: 20,
+                          width: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.grey200,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                         const SizedBox(height: 8),
-                        FutureBuilder<String?>(
-                          future: ref
-                              .read(databaseServiceProvider)
-                              .getCacheValue('meta_atual'),
-                          builder: (context, snapMeta) {
-                            if (snapMeta.connectionState !=
-                                ConnectionState.done) {
-                              return const SizedBox(
-                                height: 24,
-                                child: Center(
-                                  child: CircularProgressIndicator(),
-                                ),
-                              );
-                            }
-
-                            final meta = snapMeta.data;
-                            return Text(
-                              meta == null || meta.isEmpty
-                                  ? 'Defina sua meta para personalizar seu progresso.'
-                                  : meta,
-                              style: textTheme.bodyMedium?.copyWith(
-                                color: AppColors.success,
-                              ),
-                            );
-                          },
+                        Container(
+                          height: 16,
+                          width: 180,
+                          decoration: BoxDecoration(
+                            color: AppColors.grey200,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ],
-              );
-            },
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 16),
+        _buildLoadingEstatisticas(textTheme),
+      ],
+    );
+  }
+
+  Widget _buildErrorPerfilLogado(TextTheme textTheme, String errorMsg) {
+    return Column(
+      children: [
+        // Header do perfil com erro
+        DicumeElegantCard(
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 32,
+                    backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: AppColors.error,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Erro ao carregar perfil',
+                          style: textTheme.titleLarge?.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Toque para tentar novamente',
+                          style: textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      // Recarregar dados
+                      ref.invalidate(perfilStatusProvider);
+                    },
+                    icon: const Icon(Icons.refresh, color: AppColors.error),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        _buildErrorEstatisticas(textTheme, errorMsg),
+      ],
     );
   }
 
@@ -427,6 +399,166 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
     );
   }
 
+  Widget _buildLoadingEstatisticas(TextTheme textTheme) {
+    return DicumeElegantCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.insights, color: AppColors.primary, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Suas Conquistas',
+                style: textTheme.titleMedium?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.restaurant_menu,
+                  valor: '-',
+                  label: 'Refeições\nRegistradas',
+                  cor: AppColors.primary,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.local_fire_department,
+                  valor: '-',
+                  label: 'Dias\nConsecutivos',
+                  cor: AppColors.warning,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.grey200,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flag, color: AppColors.grey400, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Meta Atual',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: AppColors.grey600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Carregando sua meta...',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.grey600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorEstatisticas(TextTheme textTheme, String errorMsg) {
+    return DicumeElegantCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.error, color: AppColors.error, size: 24),
+              const SizedBox(width: 12),
+              Text(
+                'Erro nas Conquistas',
+                style: textTheme.titleMedium?.copyWith(
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.restaurant_menu,
+                  valor: 'Erro',
+                  label: 'Refeições\nRegistradas',
+                  cor: AppColors.error,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildEstatisticaCard(
+                  icone: Icons.local_fire_department,
+                  valor: 'Erro',
+                  label: 'Dias\nConsecutivos',
+                  cor: AppColors.error,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.error.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.flag, color: AppColors.error, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Meta Atual',
+                        style: textTheme.titleSmall?.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Não foi possível carregar sua meta: $errorMsg',
+                  style: textTheme.bodyMedium?.copyWith(color: AppColors.error),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildOpcoesConfiguracoes(TextTheme textTheme, AuthState authState) {
     return Column(
       children: [
@@ -443,7 +575,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               _buildOpcaoMenu(
                 icone: Icons.notifications_outlined,
                 titulo: 'Notificações',
@@ -451,7 +582,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 onTap: () => _abrirNotificacoes(),
               ),
               _buildDivisor(),
-
               _buildOpcaoMenu(
                 icone: Icons.palette_outlined,
                 titulo: 'Tema',
@@ -459,7 +589,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 onTap: () => _abrirTema(),
               ),
               _buildDivisor(),
-
               _buildOpcaoMenu(
                 icone: Icons.language_outlined,
                 titulo: 'Idioma',
@@ -467,7 +596,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 onTap: () => _abrirIdioma(),
               ),
               _buildDivisor(),
-
               _buildOpcaoMenu(
                 icone: Icons.help_outline,
                 titulo: 'Ajuda e Suporte',
@@ -478,7 +606,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
           ),
         ),
         const SizedBox(height: 16),
-
         // Opções de conta
         DicumeElegantCard(
           child: Column(
@@ -492,7 +619,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
               _buildOpcaoMenu(
                 icone: Icons.privacy_tip_outlined,
                 titulo: 'Privacidade',
@@ -500,7 +626,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 onTap: () => _abrirPrivacidade(),
               ),
               _buildDivisor(),
-
               _buildOpcaoMenu(
                 icone: Icons.info_outline,
                 titulo: 'Sobre o DICUMÊ',
@@ -508,7 +633,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 onTap: () => _abrirSobre(),
               ),
               _buildDivisor(),
-
               _buildOpcaoMenu(
                 icone: Icons.logout,
                 titulo: 'Sair da Conta',
@@ -542,7 +666,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
               Text(
                 'Bem-vindo ao DICUMÊ!',
                 style: textTheme.titleLarge?.copyWith(
@@ -551,7 +674,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-
               Text(
                 'Entre ou crie uma conta para sincronizar seus dados e acessar recursos exclusivos.',
                 textAlign: TextAlign.center,
@@ -560,7 +682,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
               // Botões de login
               SizedBox(
                 width: double.infinity,
@@ -573,7 +694,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
               SizedBox(
                 width: double.infinity,
                 child: DicumeElegantButton(
@@ -593,39 +713,38 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
-
-        // Opções básicas mesmo sem login
-        DicumeElegantCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Configurações Básicas',
-                style: textTheme.titleMedium?.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              _buildOpcaoMenu(
-                icone: Icons.help_outline,
-                titulo: 'Ajuda e Suporte',
-                subtitulo: 'Tire suas dúvidas',
-                onTap: () => _abrirAjuda(),
-              ),
-              _buildDivisor(),
-              _buildOpcaoMenu(
-                icone: Icons.info_outline,
-                titulo: 'Sobre o DICUMÊ',
-                subtitulo: 'Versão 1.0.0',
-                onTap: () => _abrirSobre(),
-              ),
-            ],
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _buildOpcoesBasicas(TextTheme textTheme) {
+    return DicumeElegantCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Configurações Básicas',
+            style: textTheme.titleMedium?.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildOpcaoMenu(
+            icone: Icons.help_outline,
+            titulo: 'Ajuda e Suporte',
+            subtitulo: 'Tire suas dúvidas',
+            onTap: () => _abrirAjuda(),
+          ),
+          _buildDivisor(),
+          _buildOpcaoMenu(
+            icone: Icons.info_outline,
+            titulo: 'Sobre o DICUMÊ',
+            subtitulo: 'Versão 1.0.0',
+            onTap: () => _abrirSobre(),
+          ),
+        ],
+      ),
     );
   }
 
@@ -694,7 +813,7 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
     return nome[0].toUpperCase();
   }
 
-  // Métodos de ação (seriam implementados com navegação real)
+  // Métodos de ação
   void _editarPerfil() {
     showModalBottomSheet<bool>(
       context: context,
@@ -706,7 +825,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
       try {
         await ref.read(authControllerProvider.notifier).initialize();
       } catch (e) {
-        // ignore: avoid_print
         debugPrint('[PERFIL] erro ao reinicializar auth controller: $e');
       }
     });
@@ -802,9 +920,6 @@ class _PerfilUsuarioScreenState extends ConsumerState<PerfilUsuarioScreen> {
                   // Usar AuthController para realizar signOut e propagar estado
                   try {
                     await ref.read(authControllerProvider.notifier).signOut();
-                    // Não navegar: permanecer na tela de perfil. O widget
-                    // já faz `ref.watch(authControllerProvider)` e irá
-                    // mostrar o estado deslogado automaticamente.
                   } catch (e) {
                     debugPrint(
                       '[PERFIL] Erro ao fazer signOut via controller: $e',

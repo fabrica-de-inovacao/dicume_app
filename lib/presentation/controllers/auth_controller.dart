@@ -6,6 +6,7 @@ import '../../domain/entities/user.dart';
 import '../../domain/entities/auth.dart';
 import '../../domain/entities/failures.dart';
 import '../../data/providers/auth_providers.dart';
+import '../../data/providers/refeicao_providers.dart';
 import '../../core/services/auth_service.dart';
 // ...existing code...
 
@@ -164,6 +165,10 @@ class AuthController extends _$AuthController {
       final isAuthenticatedUseCase = ref.read(isAuthenticatedUseCaseProvider);
       final isAuthenticated = await isAuthenticatedUseCase();
 
+      debugPrint(
+        '[AUTH_CONTROLLER] isAuthenticatedUseCase retornou: $isAuthenticated',
+      );
+
       if (isAuthenticated) {
         final getCurrentUserUseCase = ref.read(getCurrentUserUseCaseProvider);
         final user = await getCurrentUserUseCase();
@@ -171,89 +176,16 @@ class AuthController extends _$AuthController {
         state = state.copyWith(status: AuthStatus.authenticated, user: user);
         debugPrint('[AUTH_CONTROLLER] usuário vindo do usecase: ${user?.nome}');
       } else {
-        // Tentar fallback: talvez o token/usuario tenham sido salvos pelo
-        // AuthService (usado por ApiService) em chaves diferentes.
-        try {
-          final authService = AuthService();
-          final userMap = await authService.getUserData();
-          if (userMap != null) {
-            final Map<String, dynamic> map = Map<String, dynamic>.from(userMap);
-
-            // Extrair campos com tolerância a nulos/formats
-            final id =
-                (map['id'] ?? map['sub'] ?? map['user_metadata']?['sub'])
-                    ?.toString() ??
-                '';
-            final nome =
-                (map['user_metadata']?['nome_exibicao'] ??
-                        map['user_metadata']?['full_name'] ??
-                        map['user_metadata']?['name'] ??
-                        map['nome'] ??
-                        '')
-                    ?.toString() ??
-                '';
-            final email =
-                (map['email'] ?? map['user_metadata']?['email'])?.toString() ??
-                '';
-
-            DateTime createdAt;
-            try {
-              createdAt = DateTime.parse(
-                (map['created_at'] ?? map['createdAt'])?.toString() ??
-                    DateTime.now().toIso8601String(),
-              );
-            } catch (_) {
-              createdAt = DateTime.now();
-            }
-
-            DateTime updatedAt;
-            try {
-              updatedAt = DateTime.parse(
-                (map['updated_at'] ?? map['updatedAt'])?.toString() ??
-                    createdAt.toIso8601String(),
-              );
-            } catch (_) {
-              updatedAt = createdAt;
-            }
-
-            final avatarUrl =
-                (map['user_metadata']?['avatar_url'] ??
-                        map['user_metadata']?['picture'] ??
-                        map['avatar_url'])
-                    ?.toString();
-
-            final userEntity = User(
-              id: id,
-              nome:
-                  nome.isNotEmpty
-                      ? nome
-                      : (email.isNotEmpty
-                          ? email.split('@').first
-                          : 'Usuário DICUMÊ'),
-              email: email,
-              telefone: null,
-              avatarUrl: avatarUrl,
-              createdAt: createdAt,
-              updatedAt: updatedAt,
-              preferences: const UserPreferences(),
-            );
-
-            state = state.copyWith(
-              status: AuthStatus.authenticated,
-              user: userEntity,
-            );
-            debugPrint(
-              '[AUTH_CONTROLLER] usuário vindo do fallback: ${userEntity.nome}',
-            );
-            return;
-          }
-        } catch (e) {
-          debugPrint('[AUTH_CONTROLLER] Fallback getUserData falhou: $e');
-        }
-
-        state = state.copyWith(status: AuthStatus.unauthenticated);
+        // Se não está autenticado, não fazer fallback - limpar completamente
+        debugPrint('[AUTH_CONTROLLER] Não autenticado - limpando estado');
+        state = const AuthState(
+          status: AuthStatus.unauthenticated,
+          user: null,
+          errorMessage: null,
+        );
       }
     } catch (e) {
+      debugPrint('[AUTH_CONTROLLER] Erro em _checkAuthStatus: $e');
       state = state.copyWith(
         status: AuthStatus.error,
         errorMessage: 'Erro ao verificar autenticação: $e',
@@ -306,10 +238,28 @@ class AuthController extends _$AuthController {
           );
         },
         (_) {
-          state = state.copyWith(
+          // Invalidar providers relacionados ao usuário
+          ref.invalidate(perfilStatusProvider);
+
+          // Limpar completamente o estado
+          state = const AuthState(
             status: AuthStatus.unauthenticated,
             user: null,
+            errorMessage: null,
           );
+
+          // Garantir que AuthService também esteja limpo
+          try {
+            final authService = AuthService();
+            authService.logout();
+            debugPrint('[AUTH_CONTROLLER] AuthService logout executado');
+          } catch (e) {
+            debugPrint(
+              '[AUTH_CONTROLLER] Erro ao executar AuthService.logout: $e',
+            );
+          }
+
+          debugPrint('[AUTH_CONTROLLER] Logout realizado com sucesso');
         },
       );
     } catch (e) {

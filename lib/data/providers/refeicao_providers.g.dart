@@ -47,6 +47,25 @@ final refeicaoRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef RefeicaoRepositoryRef = AutoDisposeProviderRef<RefeicaoRepository>;
+String _$perfilStatusHash() => r'52d0e5dccc2a327ce3fdab17e12dfe10a2b6b26a';
+
+/// See also [perfilStatus].
+@ProviderFor(perfilStatus)
+final perfilStatusProvider =
+    AutoDisposeFutureProvider<PerfilStatusModel>.internal(
+      perfilStatus,
+      name: r'perfilStatusProvider',
+      debugGetCreateSourceHash:
+          const bool.fromEnvironment('dart.vm.product')
+              ? null
+              : _$perfilStatusHash,
+      dependencies: null,
+      allTransitiveDependencies: null,
+    );
+
+@Deprecated('Will be removed in 3.0. Use Ref instead')
+// ignore: unused_element
+typedef PerfilStatusRef = AutoDisposeFutureProviderRef<PerfilStatusModel>;
 String _$offlineQueueHash() => r'7d1994c8cb63d76e6e997218f0c7be559d926fb7';
 
 /// See also [OfflineQueue].

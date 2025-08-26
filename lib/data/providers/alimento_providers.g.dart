@@ -47,12 +47,12 @@ final alimentoRepositoryProvider =
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AlimentoRepositoryRef = AutoDisposeProviderRef<AlimentoRepository>;
-String _$alimentosCacheHash() => r'9430a961cfea5b1db4dfb500db1d3e08b06c35dc';
+String _$alimentosCacheHash() => r'8dfa4ad8af045e6b25eee6667f1657d862922cea';
 
 /// See also [AlimentosCache].
 @ProviderFor(AlimentosCache)
 final alimentosCacheProvider =
-    AutoDisposeAsyncNotifierProvider<AlimentosCache, List<Object?>>.internal(
+    AutoDisposeAsyncNotifierProvider<AlimentosCache, List<Alimento>>.internal(
       AlimentosCache.new,
       name: r'alimentosCacheProvider',
       debugGetCreateSourceHash:
@@ -63,6 +63,6 @@ final alimentosCacheProvider =
       allTransitiveDependencies: null,
     );
 
-typedef _$AlimentosCache = AutoDisposeAsyncNotifier<List<Object?>>;
+typedef _$AlimentosCache = AutoDisposeAsyncNotifier<List<Alimento>>;
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

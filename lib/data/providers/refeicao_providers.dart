@@ -7,6 +7,9 @@ import '../repositories/refeicao_repository_impl.dart';
 import '../datasources/refeicao_remote_datasource.dart';
 import 'auth_providers.dart';
 import '../../core/services/database_service.dart';
+import '../../core/services/api_service.dart';
+import '../models/perfil_status_model.dart';
+import '../../presentation/controllers/auth_controller.dart';
 
 part 'refeicao_providers.g.dart';
 
@@ -37,6 +40,26 @@ RefeicaoRepository refeicaoRepository(Ref ref) {
     databaseService: databaseService,
     connectivity: connectivity,
   );
+}
+
+@riverpod
+Future<PerfilStatusModel> perfilStatus(Ref ref) async {
+  // Verificar se o usuário está autenticado antes de fazer a chamada
+  final authController = ref.watch(authControllerProvider);
+
+  if (!authController.isAuthenticated) {
+    throw Exception('Usuário não autenticado');
+  }
+
+  final apiService = ApiService();
+  final result = await apiService.getPerfilStatus();
+  if (result.success) {
+    return result.data!;
+  } else {
+    throw Exception(
+      result.error ?? 'Erro desconhecido ao obter status do perfil',
+    );
+  }
 }
 
 // ============================================================================

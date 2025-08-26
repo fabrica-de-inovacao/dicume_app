@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../constants/api_endpoints.dart';
 import 'http_service.dart';
 import 'auth_service.dart';
+import '../../data/models/perfil_status_model.dart';
 
 class ApiService {
   static final ApiService _instance = ApiService._internal();
@@ -342,6 +343,19 @@ class ApiService {
       return ApiResult.error(e.message, e.type);
     } catch (e) {
       return ApiResult.error('Erro ao obter histórico: $e');
+    }
+  }
+
+  // Obter status do perfil
+  Future<ApiResult<PerfilStatusModel>> getPerfilStatus() async {
+    try {
+      final response = await _http.get(ApiEndpoints.perfilStatus);
+      final perfilStatus = PerfilStatusModel.fromJson(response.data);
+      return ApiResult.success(perfilStatus);
+    } on AppException catch (e) {
+      return ApiResult.error(e.message, e.type);
+    } catch (e) {
+      return ApiResult.error('Erro ao obter status do perfil: $e');
     }
   }
 }

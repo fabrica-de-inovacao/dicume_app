@@ -14,6 +14,7 @@ class ApiEndpoints {
   // User Profile
   static const String users = '/users';
   static const String perfil = '/perfil';
+  static const String perfilStatus = '/perfil/status';
 
   // Data
   static const String dadosAlimentos = '/dados/alimentos';

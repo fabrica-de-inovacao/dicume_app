@@ -434,6 +434,14 @@ Future<bool> showAuthModal(BuildContext context) async {
   debugPrint('[AUTH_MODAL] Abrindo modal de autenticação');
   bool authenticated = false;
 
+  // Verificar se o context está montado antes de mostrar o modal
+  if (!context.mounted) {
+    debugPrint(
+      '[AUTH_MODAL] Context não está montado, cancelando abertura do modal',
+    );
+    return false;
+  }
+
   await showModalBottomSheet<void>(
     context: context,
     backgroundColor: Colors.transparent,
@@ -456,7 +464,7 @@ Future<bool> showAuthModal(BuildContext context) async {
   debugPrint('[AUTH_MODAL] Modal fechado. Usuário autenticado: $authenticated');
 
   // Se autenticado, solicitar que o AuthController revalide o estado
-  if (authenticated) {
+  if (authenticated && context.mounted) {
     try {
       // Usar ProviderScope.containerOf para acessar providers sem ter WidgetRef
       final container = ProviderScope.containerOf(context);

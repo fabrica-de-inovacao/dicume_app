@@ -14,6 +14,7 @@ import '../../../data/providers/refeicao_providers.dart';
 import '../../../domain/entities/refeicao.dart';
 import '../../../domain/entities/alimento.dart';
 import '../auth/auth_modal_screen.dart';
+import '../buscar/buscar_alimento_screen.dart';
 
 class MontarPratoVirtualScreen extends ConsumerStatefulWidget {
   const MontarPratoVirtualScreen({super.key});
@@ -64,155 +65,63 @@ class _MontarPratoVirtualScreenState
     super.dispose();
   }
 
-  void _adicionarAlimento(AlimentoNutricional alimento) {
-    if (mounted) {
-      setState(() {
-        pratoAtual.add(alimento);
-        _atualizarEstatisticas();
-      });
-
-      // Feedback tátil e animação
-      FeedbackService().lightTap();
-      _plateController.reset();
-      _plateController.forward();
-    }
-  }
-
-  void _removerAlimento(int index) {
-    if (index >= 0 && index < pratoAtual.length) {
-      setState(() {
-        pratoAtual.removeAt(index);
-        _atualizarEstatisticas();
-      });
-
-      FeedbackService().lightTap();
-    }
-  }
-
-  void _atualizarEstatisticas() {
-    double totalCalorias = 0;
-    double totalProteinas = 0;
-    double totalCarboidratos = 0;
-    double totalGorduras = 0;
-    double totalFibras = 0;
-
-    int verdes = 0, amarelos = 0, vermelhos = 0;
-
-    for (var alimento in pratoAtual) {
-      totalCalorias += alimento.calorias;
-      totalProteinas += alimento.proteinas;
-      totalCarboidratos += alimento.carboidratos;
-      totalGorduras += alimento.gorduras;
-      totalFibras += alimento.fibras;
-
-      switch (alimento.semaforo) {
-        case 'verde':
-          verdes++;
-          break;
-        case 'amarelo':
-          amarelos++;
-          break;
-        case 'vermelho':
-          vermelhos++;
-          break;
-      }
-    }
-
-    // Determinar semáforo geral do prato
-    String semaforoGeral = 'verde';
-    if (vermelhos > 0) {
-      semaforoGeral = 'vermelho';
-    } else if (amarelos > verdes) {
-      semaforoGeral = 'amarelo';
-    }
-
-    estatisticasPrato = {
-      'calorias': totalCalorias,
-      'proteinas': totalProteinas,
-      'carboidratos': totalCarboidratos,
-      'gorduras': totalGorduras,
-      'fibras': totalFibras,
-      'semaforo': semaforoGeral,
-      'verdes': verdes,
-      'amarelos': amarelos,
-      'vermelhos': vermelhos,
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final textTheme = theme.textTheme;
+    final textTheme = Theme.of(context).textTheme;
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (!didPop) {
-          FeedbackService().lightTap();
-          if (context.mounted) {
-            context.go('/home');
-          }
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          centerTitle: true,
-          title: Text(
-            'Monte seu Prato Virtual',
-            style: textTheme.titleLarge?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          leading: IconButton(
-            onPressed: () {
-              FeedbackService().lightTap();
-              if (mounted) {
-                context.pop();
-              }
-            },
-            icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
-          ),
-        ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              // Prato Virtual
-              _buildPratoVirtual(textTheme),
-
-              // Estatísticas do prato
-              if (pratoAtual.isNotEmpty) _buildEstatisticasPrato(textTheme),
-
-              // Lista de alimentos para adicionar
-              Expanded(child: _buildListaAlimentos(textTheme)),
-            ],
-          ),
-        ),
-        floatingActionButton:
-            pratoAtual.isNotEmpty
-                ? FloatingActionButton.extended(
-                  onPressed: () {
-                    if (mounted && pratoAtual.isNotEmpty) {
-                      FeedbackService().strongTap();
-                      _mostrarResumoFinal(context);
-                    }
-                  },
-                  backgroundColor: AppColors.primary,
-                  icon: const Icon(Icons.check, color: AppColors.onPrimary),
-                  label: Text(
-                    'Finalizar Prato',
-                    style: textTheme.labelLarge?.copyWith(
-                      color: AppColors.onPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                )
-                : null,
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Montar Prato'),
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 0,
       ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Prato Virtual
+            _buildPratoVirtual(textTheme),
+
+            // Estatísticas do prato
+            if (pratoAtual.isNotEmpty) _buildEstatisticasPrato(textTheme),
+
+            // Lista de alimentos para adicionar
+            Expanded(child: _buildListaAlimentos(textTheme)),
+          ],
+        ),
+      ),
+      floatingActionButton:
+          pratoAtual.isNotEmpty
+              ? FloatingActionButton.extended(
+                onPressed: () {
+                  if (mounted && pratoAtual.isNotEmpty) {
+                    FeedbackService().strongTap();
+                    _mostrarResumoFinal(context);
+                  }
+                },
+                backgroundColor: AppColors.primary,
+                icon: const Icon(Icons.check, color: AppColors.onPrimary),
+                label: Text(
+                  'Finalizar Prato',
+                  style: textTheme.labelLarge?.copyWith(
+                    color: AppColors.onPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              )
+              : null,
     );
+  }
+
+  void _adicionarAlimento(AlimentoNutricional alimento) {
+    setState(() {
+      pratoAtual.add(alimento);
+      _atualizarEstatisticas();
+      // animação para chamar atenção
+      try {
+        _plateController.forward(from: 0);
+      } catch (_) {}
+    });
   }
 
   Widget _buildPratoVirtual(TextTheme textTheme) {
@@ -238,6 +147,11 @@ class _MontarPratoVirtualScreenState
                   ),
                 ),
                 const Spacer(),
+                IconButton(
+                  onPressed: () async => await _openBuscarAndAdd(),
+                  icon: const Icon(Icons.search, color: AppColors.primary),
+                  tooltip: 'Buscar alimentos',
+                ),
                 if (pratoAtual.isNotEmpty)
                   DicumeSemaforoNutricional(
                     nivel: estatisticasPrato['semaforo'],
@@ -256,18 +170,45 @@ class _MontarPratoVirtualScreenState
                 return Transform.scale(
                   scale: _plateScale.value,
                   child: Container(
-                    width: 200,
-                    height: 200,
+                    width: 220,
+                    height: 220,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppColors.surface,
-                      border: Border.all(color: AppColors.outline, width: 3),
-                      boxShadow: AppColors.mediumShadow,
+                      gradient: RadialGradient(
+                        colors: [Color(0xFFFFFFFF), Color(0xFFF7F8FA)],
+                        center: Alignment(-0.2, -0.2),
+                        radius: 0.9,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 12,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                      border: Border.all(color: AppColors.outline, width: 2),
                     ),
-                    child:
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // rim/anel do prato
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: AppColors.surface,
+                            border: Border.all(
+                              color: AppColors.grey100,
+                              width: 8,
+                            ),
+                          ),
+                        ),
                         pratoAtual.isEmpty
                             ? _buildPratoVazio(textTheme)
                             : _buildPratoComAlimentos(textTheme),
+                      ],
+                    ),
                   ),
                 );
               },
@@ -320,7 +261,7 @@ class _MontarPratoVirtualScreenState
           ),
         ),
 
-        // Alimentos distribuídos no prato
+        // Alimentos distribuídos no prato (com foto quando disponível)
         ...pratoAtual.asMap().entries.map((entry) {
           final index = entry.key;
           final alimento = entry.value;
@@ -337,11 +278,10 @@ class _MontarPratoVirtualScreenState
             child: GestureDetector(
               onTap: () => _removerAlimento(index),
               child: Container(
-                width: 40,
-                height: 40,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: _getCorSemaforo(alimento.semaforo),
                   border: Border.all(color: AppColors.surface, width: 2),
                   boxShadow: [
                     BoxShadow(
@@ -351,14 +291,42 @@ class _MontarPratoVirtualScreenState
                     ),
                   ],
                 ),
-                child: Center(
-                  child: Text(
-                    alimento.nome.substring(0, 1).toUpperCase(),
-                    style: textTheme.labelMedium?.copyWith(
-                      color: AppColors.surface,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: ClipOval(
+                  child:
+                      alimento.imagemUrl.isNotEmpty
+                          ? Image.network(
+                            alimento.imagemUrl,
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (c, e, s) => Container(
+                                  color: _getCorSemaforo(alimento.semaforo),
+                                  child: Center(
+                                    child: Text(
+                                      alimento.nome
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      style: textTheme.labelMedium?.copyWith(
+                                        color: AppColors.surface,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          )
+                          : Container(
+                            color: _getCorSemaforo(alimento.semaforo),
+                            child: Center(
+                              child: Text(
+                                alimento.nome.substring(0, 1).toUpperCase(),
+                                style: textTheme.labelMedium?.copyWith(
+                                  color: AppColors.surface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                 ),
               ),
             ),
@@ -406,17 +374,77 @@ class _MontarPratoVirtualScreenState
             margin: const EdgeInsets.only(bottom: 4),
             child: Row(
               children: [
-                DicumeSemaforoNutricional(
-                  nivel: alimento.semaforo,
-                  descricao: '',
+                // Miniatura do alimento
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child:
+                      alimento.imagemUrl.isNotEmpty
+                          ? Image.network(
+                            alimento.imagemUrl,
+                            width: 44,
+                            height: 44,
+                            fit: BoxFit.cover,
+                            errorBuilder:
+                                (c, e, s) => Container(
+                                  width: 44,
+                                  height: 44,
+                                  color: AppColors.grey100,
+                                  child: Center(
+                                    child: Text(
+                                      alimento.nome
+                                          .substring(0, 1)
+                                          .toUpperCase(),
+                                      style: textTheme.labelMedium?.copyWith(
+                                        color: AppColors.onSurface,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          )
+                          : Container(
+                            width: 44,
+                            height: 44,
+                            color: AppColors.grey100,
+                            child: Center(
+                              child: Text(
+                                alimento.nome.substring(0, 1).toUpperCase(),
+                                style: textTheme.labelMedium?.copyWith(
+                                  color: AppColors.onSurface,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
-                  child: Text(
-                    alimento.nome,
-                    style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        alimento.nome,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      alimento.calorias > 0
+                          ? Text(
+                            '${alimento.calorias.toInt()} kcal',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.grey600,
+                            ),
+                          )
+                          : Text(
+                            alimento.descricao.isNotEmpty
+                                ? alimento.descricao
+                                : alimento.nome,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.grey600,
+                            ),
+                          ),
+                    ],
                   ),
                 ),
                 IconButton(
@@ -454,39 +482,49 @@ class _MontarPratoVirtualScreenState
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildInfoNutricional(
-                  'Calorias',
-                  '${estatisticasPrato['calorias'].toInt()}',
-                  'kcal',
-                  Icons.local_fire_department,
-                  AppColors.warning,
-                ),
-                const SizedBox(width: 16),
-                _buildInfoNutricional(
-                  'Proteínas',
-                  '${estatisticasPrato['proteinas'].toStringAsFixed(1)}',
-                  'g',
-                  Icons.fitness_center,
-                  AppColors.primary,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Text(
-                  'Semáforo: ',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${pratoAtual.length} itens',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Semáforo: ${estatisticasPrato['semaforo']}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Text(
-                  '${estatisticasPrato['verdes']} verdes, ${estatisticasPrato['amarelos']} amarelos, ${estatisticasPrato['vermelhos']} vermelhos',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w500,
+                if ((estatisticasPrato['calorias'] as double) > 0)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${estatisticasPrato['calorias'].toInt()} kcal',
+                          style: textTheme.titleMedium?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Calorias totais',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ],
@@ -495,38 +533,9 @@ class _MontarPratoVirtualScreenState
     );
   }
 
-  Widget _buildInfoNutricional(
-    String label,
-    String valor,
-    String unidade,
-    IconData icone,
-    Color cor,
-  ) {
-    return Expanded(
-      child: Row(
-        children: [
-          Icon(icone, size: 16, color: cor),
-          const SizedBox(width: 4),
-          Text(
-            '$label: ',
-            style: Theme.of(
-              context,
-            ).textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-          ),
-          Text(
-            '$valor$unidade',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // _buildInfoNutricional removed - simplified statistics card uses inline widgets
 
   Widget _buildListaAlimentos(TextTheme textTheme) {
-    // Obter alimentos do cache local via provider
     final alimentosAsync = ref.watch(alimentosCacheProvider);
 
     return DicumeElegantCard(
@@ -535,30 +544,80 @@ class _MontarPratoVirtualScreenState
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Adicionar Alimentos',
-            style: textTheme.titleMedium?.copyWith(
+            'Resumo do Prato',
+            style: textTheme.titleSmall?.copyWith(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: alimentosAsync.when(
-              data: (alimentos) {
-                // Esperamos uma lista de Alimento
-                final List<Alimento> alimentosList =
-                    (alimentos as List).cast<Alimento>();
-                // Agrupar por grupoDicume
-                final Map<String, List<Alimento>> grupos = {};
-                for (final a in alimentosList) {
-                  final grupo = a.grupoDicume;
-                  final key = grupo.isNotEmpty ? grupo : 'Outros';
-                  grupos.putIfAbsent(key, () => []).add(a);
-                }
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${pratoAtual.length} itens',
+                      style: textTheme.titleMedium?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Semáforo: ${estatisticasPrato['semaforo']}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if ((estatisticasPrato['calorias'] as double) > 0)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        '${estatisticasPrato['calorias'].toInt()} kcal',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Calorias totais',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const Divider(),
+          const SizedBox(height: 8),
 
-                final grupoEntries = grupos.entries.toList();
+          // Lista de alimentos disponível para adicionar
+          alimentosAsync.when(
+            data: (alimentos) {
+              final List<Alimento> alimentosList =
+                  (alimentos as List).cast<Alimento>();
+              final Map<String, List<Alimento>> grupos = {};
+              for (final a in alimentosList) {
+                final key = a.grupoDicume.isNotEmpty ? a.grupoDicume : 'Outros';
+                grupos.putIfAbsent(key, () => []).add(a);
+              }
 
-                return ListView.builder(
+              final grupoEntries = grupos.entries.toList();
+
+              return SizedBox(
+                height: 300,
+                child: ListView.builder(
                   itemCount: grupoEntries.length,
                   itemBuilder: (context, index) {
                     final grupoNome = grupoEntries[index].key;
@@ -618,7 +677,6 @@ class _MontarPratoVirtualScreenState
                               ),
                               trailing: IconButton(
                                 onPressed: () {
-                                  // Criar objeto compatível com AlimentoNutricional usado no prato
                                   final item = AlimentoNutricional(
                                     id: id,
                                     nome: nome,
@@ -643,17 +701,112 @@ class _MontarPratoVirtualScreenState
                           }).toList(),
                     );
                   },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error:
-                  (e, s) =>
-                      Center(child: Text('Erro ao carregar alimentos: $e')),
-            ),
+                ),
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error:
+                (e, s) => Center(child: Text('Erro ao carregar alimentos: $e')),
           ),
         ],
       ),
     );
+  }
+
+  void _removerAlimento(int index) {
+    setState(() {
+      if (index >= 0 && index < pratoAtual.length) {
+        pratoAtual.removeAt(index);
+        _atualizarEstatisticas();
+      }
+    });
+  }
+
+  void _atualizarEstatisticas() {
+    double calorias = 0.0;
+    double proteinas = 0.0;
+    double carboidratos = 0.0;
+    double gorduras = 0.0;
+    double fibras = 0.0;
+    int verdes = 0, amarelos = 0, vermelhos = 0;
+
+    for (final a in pratoAtual) {
+      calorias += a.calorias;
+      proteinas += a.proteinas;
+      carboidratos += a.carboidratos;
+      gorduras += a.gorduras;
+      fibras += a.fibras;
+      switch (a.semaforo) {
+        case 'verde':
+          verdes++;
+          break;
+        case 'amarelo':
+          amarelos++;
+          break;
+        case 'vermelho':
+          vermelhos++;
+          break;
+        default:
+      }
+    }
+
+    String semaforo = 'neutro';
+    if (verdes >= amarelos && verdes >= vermelhos && verdes > 0)
+      semaforo = 'verde';
+    else if (amarelos >= verdes && amarelos >= vermelhos && amarelos > 0)
+      semaforo = 'amarelo';
+    else if (vermelhos > 0)
+      semaforo = 'vermelho';
+
+    setState(() {
+      estatisticasPrato['calorias'] = calorias;
+      estatisticasPrato['proteinas'] = proteinas;
+      estatisticasPrato['carboidratos'] = carboidratos;
+      estatisticasPrato['gorduras'] = gorduras;
+      estatisticasPrato['fibras'] = fibras;
+      estatisticasPrato['semaforo'] = semaforo;
+      estatisticasPrato['verdes'] = verdes;
+      estatisticasPrato['amarelos'] = amarelos;
+      estatisticasPrato['vermelhos'] = vermelhos;
+    });
+  }
+
+  Future<void> _openBuscarAndAdd() async {
+    final result = await Navigator.of(context).push<Alimento?>(
+      PageRouteBuilder(
+        opaque: false,
+        barrierDismissible: true,
+        barrierColor: Colors.black.withOpacity(0.35),
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return FadeTransition(
+            opacity: animation,
+            child: const BuscarAlimentoScreen(),
+          );
+        },
+      ),
+    );
+    if (result != null) {
+      final alimento = result;
+      final item = AlimentoNutricional(
+        id: alimento.id.toString(),
+        nome: alimento.nomePopular,
+        grupoId: alimento.grupoDicume,
+        calorias: 0.0,
+        carboidratos: 0.0,
+        proteinas: 0.0,
+        gorduras: 0.0,
+        fibras: 0.0,
+        sodio: 0.0,
+        semaforo:
+            alimento.classificacaoCor.isNotEmpty
+                ? alimento.classificacaoCor
+                : 'neutro',
+        descricao: alimento.recomendacaoConsumo,
+        imagemUrl: alimento.fotoPorcaoUrl,
+      );
+
+      _adicionarAlimento(item);
+    }
   }
 
   Color _getCorSemaforo(String semaforo) {
