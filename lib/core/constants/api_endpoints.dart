@@ -6,8 +6,7 @@ class ApiEndpoints {
   static const String loginGoogle = '/auth/google';
   static const String signup = '/auth/signup';
   static const String signin = '/auth/signin';
-  static const String requestSMSCode = '/auth/solicitar-codigo';
-  static const String verifySMSCode = '/auth/validar-codigo';
+  // SMS endpoints removed (not used)
   static const String logout = '/auth/logout';
   static const String refreshToken = '/auth/refresh-token';
 

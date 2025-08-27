@@ -1,8 +1,10 @@
 import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+// Removidos imports de File e path_provider - não gravamos arquivos aqui
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -168,6 +170,27 @@ class AuthService {
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
+      // ✅ PATCH 1: NÃO salvar idToken em arquivo aqui (remoção de I/O)
+      final idToken = googleAuth.idToken;
+      if (idToken != null) {
+        debugPrint(
+          '🔍 [AUTH_SERVICE] idToken tamanho: ${idToken.length} caracteres',
+        );
+      }
+
+      // ✅ PATCH 2: Exibir idToken em partes no console
+      if (idToken != null) {
+        debugPrint(
+          '🔍 [AUTH_SERVICE] idToken (primeiros 571 chars): ${idToken.substring(0, 571)}',
+        );
+        debugPrint(
+          '🔍 [AUTH_SERVICE] idToken (últimos 571 chars): ${idToken.substring(idToken.length - 571)}',
+        );
+        debugPrint(
+          '🔍 [AUTH_SERVICE] idToken tamanho total: ${idToken.length} caracteres',
+        );
+      }
+
       // 🔍 LOG COMPLETO DOS DADOS DE AUTENTICAÇÃO
       debugPrint(
         '📋 [GOOGLE_AUTH] ========== DADOS DE AUTENTICAÇÃO ==========',
@@ -192,11 +215,19 @@ class AuthService {
       debugPrint('🔐 [AUTH] idToken exists: ${googleAuth.idToken != null}');
 
       if (googleAuth.idToken != null) {
-        debugPrint(
-          '🔐 [AUTH] idToken (primeiros 20 chars): ${googleAuth.idToken!.substring(0, 20)}...',
-        );
+        // Salva idToken completo no diretório de documentos do app para depuração
+        try {
+          // Apenas logar informação de debug (não gravar em arquivo)
+          debugPrint(
+            '� [AUTH_SERVICE] idToken tamanho: ${googleAuth.idToken!.length}',
+          );
+        } catch (e) {
+          debugPrint(
+            '❌ [AUTH_SERVICE] Erro ao processar idToken para debug: $e',
+          );
+        }
 
-        // 🔍 DECODIFICAR JWT PARA VER TODOS OS DADOS
+        // Decodificar token apenas para logs (mantendo a lógica anterior)
         try {
           Map<String, dynamic> decodedToken = JwtDecoder.decode(
             googleAuth.idToken!,

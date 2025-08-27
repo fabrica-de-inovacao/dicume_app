@@ -11,10 +11,10 @@ UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
   nome: json['nome'] as String,
   email: json['email'] as String,
   telefone: json['telefone'] as String?,
-  avatarUrl: json['avatar_url'] as String?,
+  avatarUrl: json['avatarUrl'] as String?,
   createdAt: json['created_at'] as String,
   updatedAt: json['updated_at'] as String,
-  isFirstLogin: json['is_first_login'] as bool,
+  isFirstLogin: json['is_first_login'] as bool? ?? true,
   preferences: UserPreferencesModel.fromJson(
     json['preferences'] as Map<String, dynamic>,
   ),
@@ -25,7 +25,7 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'nome': instance.nome,
   'email': instance.email,
   'telefone': instance.telefone,
-  'avatar_url': instance.avatarUrl,
+  'avatarUrl': instance.avatarUrl,
   'created_at': instance.createdAt,
   'updated_at': instance.updatedAt,
   'is_first_login': instance.isFirstLogin,
@@ -35,13 +35,13 @@ Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
 UserPreferencesModel _$UserPreferencesModelFromJson(
   Map<String, dynamic> json,
 ) => UserPreferencesModel(
-  notificacoesAtivas: json['notificacoes_ativas'] as bool,
-  horaLembreteAlmoco: (json['hora_lembrete_almoco'] as num).toInt(),
-  horaLembreteJantar: (json['hora_lembrete_jantar'] as num).toInt(),
-  lembrarAgua: json['lembrar_agua'] as bool,
-  usarSemaforo: json['usar_semaforo'] as bool,
-  tamanhoFonte: (json['tamanho_fonte'] as num).toDouble(),
-  contrasteAlto: json['contraste_alto'] as bool,
+  notificacoesAtivas: json['notificacoes_ativas'] as bool? ?? true,
+  horaLembreteAlmoco: (json['hora_lembrete_almoco'] as num?)?.toInt() ?? 12,
+  horaLembreteJantar: (json['hora_lembrete_jantar'] as num?)?.toInt() ?? 19,
+  lembrarAgua: json['lembrar_agua'] as bool? ?? true,
+  usarSemaforo: json['usar_semaforo'] as bool? ?? true,
+  tamanhoFonte: (json['tamanho_fonte'] as num?)?.toDouble() ?? 1.0,
+  contrasteAlto: json['contraste_alto'] as bool? ?? false,
 );
 
 Map<String, dynamic> _$UserPreferencesModelToJson(

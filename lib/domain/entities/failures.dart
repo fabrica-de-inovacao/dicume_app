@@ -46,23 +46,7 @@ class GoogleSignInCancelledFailure extends AuthFailure {
   const GoogleSignInCancelledFailure();
 }
 
-// Falhas específicas do SMS
-class SMSVerificationFailure extends AuthFailure {
-  final String message;
-
-  const SMSVerificationFailure(this.message);
-
-  @override
-  List<Object?> get props => [message];
-}
-
-class InvalidSMSCodeFailure extends AuthFailure {
-  const InvalidSMSCodeFailure();
-}
-
-class SMSCodeExpiredFailure extends AuthFailure {
-  const SMSCodeExpiredFailure();
-}
+// SMS-specific failures removed (SMS not supported)
 
 class TooManyAttemptsFailure extends AuthFailure {
   final DateTime? retryAfter;

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'dart:io';
+// import 'dart:io' removido - não salvamos arquivos de resposta mais
 import 'dart:convert';
 import '../constants/api_endpoints.dart';
 import 'http_service.dart';
@@ -77,31 +77,21 @@ class ApiService {
     }).toList();
   }
 
-  // Método para salvar response completa da API (status 200)
+  // Método para logar response completa da API (status 200) sem salvar em arquivo
   Future<void> _saveApiResponse(Map<String, dynamic> responseData) async {
     try {
-      // Criar nome do arquivo com timestamp
-      final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');
-      final fileName = 'api_response_$timestamp.json';
-      final file = File(fileName);
-
-      // Preparar dados completos para salvar
       final completeData = {
         'timestamp': DateTime.now().toIso8601String(),
         'status': 'SUCCESS',
-        'response_data': responseData,
         'response_keys': responseData.keys.toList(),
         'response_size': responseData.toString().length,
       };
 
-      // Salvar dados em JSON formatado
-      await file.writeAsString(
-        const JsonEncoder.withIndent('  ').convert(completeData),
+      debugPrint(
+        '📁 [API_RESPONSE] Response completa (não salva): ${const JsonEncoder.withIndent('  ').convert(completeData)}',
       );
-
-      debugPrint('📁 [API_RESPONSE] Response completa salva em $fileName');
     } catch (e) {
-      debugPrint('❌ [API_RESPONSE] Erro ao salvar response: $e');
+      debugPrint('❌ [API_RESPONSE] Erro ao processar response para debug: $e');
     }
   }
 

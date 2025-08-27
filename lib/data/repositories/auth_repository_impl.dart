@@ -1,4 +1,5 @@
 import 'dart:async';
+// imports de File e path_provider removidos (não usamos gravação de arquivos aqui)
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
@@ -36,7 +37,7 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -49,7 +50,30 @@ class AuthRepositoryImpl implements AuthRepository {
       // Obtém o token de autenticação do Google
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
-      final String? googleToken = googleAuth.accessToken;
+
+      // ✅ PATCH 1: NÃO salvar idToken em arquivo aqui (removed file writes)
+      final idToken = googleAuth.idToken;
+      if (idToken != null) {
+        // Apenas logar tamanho e trecho para depuração
+        // ignore: avoid_print
+        print('🔍 [GOOGLE] idToken tamanho: ${idToken.length} caracteres');
+      }
+
+      // ✅ PATCH 2: Exibir idToken em partes no console
+      if (idToken != null) {
+        print(
+          '🔍 [GOOGLE] idToken (primeiros 100 chars): ${idToken.substring(0, 100)}',
+        );
+        print(
+          '🔍 [GOOGLE] idToken (últimos 100 chars): ${idToken.substring(idToken.length - 100)}',
+        );
+        print(
+          '🔍 [GOOGLE] idToken tamanho total: ${idToken.length} caracteres',
+        );
+      }
+
+      // Usa idToken preferencialmente (ideal para API backend), fallback para accessToken
+      final String? googleToken = googleAuth.idToken ?? googleAuth.accessToken;
 
       if (googleToken == null) {
         return const Left(
@@ -57,12 +81,26 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      // Envia o token para nossa API
-      final userModel = await remoteDataSource.signInWithGoogle(googleToken);
-      final user = userModel.toEntity();
+      // Salva dados do Google para debug (apenas log, sem gravação em arquivo)
+      await _logGoogleResponseForDebug(googleUser, googleAuth);
 
-      // Cache local
-      await localDataSource.cacheUser(userModel);
+      // Envia o token para nossa API e recebe token + usuário
+      final authResponse = await remoteDataSource.signInWithGoogle(googleToken);
+      final user = authResponse.usuario.toEntity();
+
+      // Cache do token e usuário
+      final tokenModel = AuthTokenModel(
+        accessToken: authResponse.token,
+        refreshToken: '', // API não fornece refresh token no Google auth
+        expiresAt:
+            DateTime.now()
+                .add(const Duration(hours: 24))
+                .toIso8601String(), // Valor padrão
+        tokenType: 'Bearer',
+      );
+
+      await localDataSource.cacheToken(tokenModel);
+      await localDataSource.cacheUser(authResponse.usuario);
 
       // Emite mudança no estado de autenticação
       _authStateController.add(user);
@@ -79,54 +117,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<AuthFailure, String>> requestSMSCode(String phoneNumber) async {
-    try {
-      // Verifica conectividade
-      final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        return const Left(NetworkAuthFailure());
-      }
-
-      final response = await remoteDataSource.requestSMSCode(phoneNumber);
-      return Right(response.sessionId);
-    } on DioException catch (e) {
-      return Left(_handleDioException(e));
-    } catch (e) {
-      return Left(SMSVerificationFailure(e.toString()));
-    }
-  }
-
-  @override
-  Future<Either<AuthFailure, User>> verifyAndSignInWithSMS(
-    SMSVerificationRequest request,
-  ) async {
-    try {
-      // Verifica conectividade
-      final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
-        return const Left(NetworkAuthFailure());
-      }
-
-      final requestModel = SMSVerificationRequestModel.fromEntity(request);
-      final userModel = await remoteDataSource.verifyAndSignInWithSMS(
-        requestModel,
-      );
-      final user = userModel.toEntity();
-
-      // Cache local
-      await localDataSource.cacheUser(userModel);
-
-      // Emite mudança no estado de autenticação
-      _authStateController.add(user);
-
-      return Right(user);
-    } on DioException catch (e) {
-      return Left(_handleDioException(e));
-    } catch (e) {
-      return Left(SMSVerificationFailure(e.toString()));
-    }
-  }
-
+  // SMS flows removed
+  // SMS flows removed
   @override
   Future<Either<AuthFailure, void>> signOut() async {
     try {
@@ -135,7 +127,7 @@ class AuthRepositoryImpl implements AuthRepository {
       if (token != null) {
         try {
           final connectivityResult = await connectivity.checkConnectivity();
-          if (connectivityResult != ConnectivityResult.none) {
+          if (!connectivityResult.contains(ConnectivityResult.none)) {
             await remoteDataSource.signOut(token.accessToken);
           }
         } catch (e) {
@@ -210,7 +202,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -250,7 +242,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // Verifica conectividade
       final connectivityResult = await connectivity.checkConnectivity();
-      if (connectivityResult == ConnectivityResult.none) {
+      if (connectivityResult.contains(ConnectivityResult.none)) {
         return const Left(NetworkAuthFailure());
       }
 
@@ -319,6 +311,46 @@ class AuthRepositoryImpl implements AuthRepository {
       case DioExceptionType.unknown:
       default:
         return UnknownAuthFailure(e.message ?? 'Erro desconhecido');
+    }
+  }
+
+  /// Loga dados da resposta do Google para debug (sem salvar em arquivo)
+  Future<void> _logGoogleResponseForDebug(
+    GoogleSignInAccount googleUser,
+    GoogleSignInAuthentication googleAuth,
+  ) async {
+    try {
+      final googleResponseData = {
+        'user': {
+          'id': googleUser.id,
+          'email': googleUser.email,
+          'displayName': googleUser.displayName,
+          'photoUrl': googleUser.photoUrl,
+          'serverAuthCode': googleUser.serverAuthCode,
+        },
+        'authentication': {
+          'hasAccessToken': googleAuth.accessToken != null,
+          'hasIdToken': googleAuth.idToken != null,
+          'tokenUsedForAPI': googleAuth.idToken ?? googleAuth.accessToken,
+          'tokenType': googleAuth.idToken != null ? 'ID_TOKEN' : 'ACCESS_TOKEN',
+        },
+        'timestamp': DateTime.now().toIso8601String(),
+        'debugInfo': {
+          'idTokenLength': googleAuth.idToken?.length ?? 0,
+          'accessTokenLength': googleAuth.accessToken?.length ?? 0,
+        },
+      };
+
+      // Apenas imprimir versão sanitizada para evitar logs muito grandes
+      // ignore: avoid_print
+      print('🔍 [GOOGLE_LOG] ========== GOOGLE RESPONSE DEBUG ==========');
+      // ignore: avoid_print
+      print(googleResponseData);
+      // ignore: avoid_print
+      print('🔍 [GOOGLE_LOG] ============================================');
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ [GOOGLE_LOG] Erro ao logar dados do Google: $e');
     }
   }
 
