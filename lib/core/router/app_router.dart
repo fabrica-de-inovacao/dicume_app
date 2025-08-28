@@ -1,3 +1,4 @@
+import 'package:dicume_app/presentation/screens/montar_prato/montar_prato_virtual_screen.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,8 +9,6 @@ import '../../presentation/screens/setup/setup_loading_screen.dart';
 import '../../presentation/screens/main/main_navigation_screen.dart';
 import '../../presentation/screens/home/home_screen_elegante.dart';
 import '../../presentation/screens/aprender/aprender_screen.dart';
-import '../../presentation/screens/montar_prato/montar_prato_virtual_screen.dart';
-import '../../presentation/screens/montar_prato/montar_prato_screen_v3.dart';
 import '../../presentation/screens/historico/historico_screen_v3.dart';
 import '../../presentation/screens/perfil/perfil_screen_v3.dart';
 import '../../presentation/screens/meu_dia/meu_dia_screen.dart';
@@ -104,7 +103,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Montar Prato (tela completa)
           GoRoute(
             path: AppRoutes.montarPrato,
-            builder: (context, state) => const MontarPratoScreenV3(),
+            builder: (context, state) => const MontarPratoVirtualScreen(),
           ),
 
           // Histórico

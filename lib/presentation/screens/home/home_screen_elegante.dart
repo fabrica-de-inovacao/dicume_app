@@ -6,14 +6,12 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/services/feedback_service.dart';
-import '../../../core/services/mock_data_service_regional.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/utils/auth_utils.dart';
 import '../../../data/providers/alimento_providers.dart';
 import '../../controllers/auth_controller.dart';
 import '../../widgets/home_banner_carousel.dart';
 import '../../../data/providers/refeicao_providers.dart'; // Importar o novo provider
-import '../../../data/models/perfil_status_model.dart'; // Importar o modelo
 import 'package:intl/intl.dart'; // Para formatar a data
 
 class HomeScreenElegante extends ConsumerStatefulWidget {
@@ -95,7 +93,7 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
+            color: AppColors.primary.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -127,7 +125,7 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
                 child: Icon(
                   Icons.restaurant_menu_rounded,
                   size: 120,
-                  color: Colors.white.withOpacity(0.1),
+                  color: Colors.white.withValues(alpha: 0.1),
                 ),
               ),
               Padding(
@@ -146,7 +144,7 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
                     Text(
                       'Crie uma refeição saudável e balanceada em poucos passos.',
                       style: textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         height: 1.4,
                       ),
                     ),
@@ -477,8 +475,9 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
     final percentualVerde = verdes / total;
     final percentualVermelho = vermelhos / total;
 
-    if (percentualVermelho > 0.3)
+    if (percentualVermelho > 0.3) {
       return 'vermelho'; // Muitos alimentos de alto IG
+    }
     if (percentualVerde >= 0.6) return 'verde'; // Maioria de baixo IG
     return 'amarelo'; // Moderado
   }
@@ -1093,7 +1092,7 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
       FeedbackService().mediumTap();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('🔓 Continue... (${_tapCount}/5)'),
+          content: Text('🔓 Continue... ($_tapCount/5)'),
           backgroundColor: AppColors.primary,
           duration: const Duration(seconds: 1),
         ),

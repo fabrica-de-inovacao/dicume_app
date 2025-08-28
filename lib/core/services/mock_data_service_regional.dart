@@ -29,6 +29,7 @@ class AlimentoNutricional {
   final String semaforo;
   final String descricao;
   final String imagemUrl;
+  final double quantidadeBase; // Adicionado quantidadeBase
 
   const AlimentoNutricional({
     required this.id,
@@ -43,6 +44,7 @@ class AlimentoNutricional {
     required this.semaforo,
     required this.descricao,
     required this.imagemUrl,
+    this.quantidadeBase = 1.0, // Valor padrão para evitar quebras
   });
 
   /// Converte para Alimento para compatibilidade

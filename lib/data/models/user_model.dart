@@ -33,19 +33,21 @@ class UserModel {
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final userMetadata = json['user_metadata'] as Map<String, dynamic>?;
     return UserModel(
-      id: json['id'] as String,
-      nome: userMetadata?['full_name'] as String? ?? '',
-      email: json['email'] as String,
-      telefone: json['phone'] as String?,
-      avatarUrl: userMetadata?['avatar_url'] as String?,
-      createdAt: json['created_at'] as String,
-      updatedAt: json['updated_at'] as String,
-      isFirstLogin: json['is_first_login'] as bool? ?? true,
-      preferences: json['preferences'] == null
-          ? UserPreferencesModel.defaultPreferences
-          : UserPreferencesModel.fromJson(json['preferences'] as Map<String, dynamic>),
-    );
-  }
+          id: json['id'] as String,
+          nome: (userMetadata?['full_name'] as String?) ??
+              (userMetadata?['nome_exibicao'] as String?) ??
+              '',
+          email: json['email'] as String,
+          telefone: json['phone'] as String?,
+          avatarUrl: userMetadata?['avatar_url'] as String?,
+          createdAt: json['created_at'] as String,
+          updatedAt: json['updated_at'] as String,
+          isFirstLogin: json['is_first_login'] as bool? ?? true,
+          preferences: json['preferences'] == null
+              ? UserPreferencesModel.defaultPreferences
+              : UserPreferencesModel.fromJson(json['preferences'] as Map<String, dynamic>),
+        );
+      }
 
   Map<String, dynamic> toJson() => _$UserModelToJson(this);
 

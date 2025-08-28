@@ -4,12 +4,19 @@ import 'dart:convert';
 import '../constants/api_endpoints.dart';
 import 'http_service.dart';
 import 'auth_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/perfil_status_model.dart';
+import '../../data/models/refeicao_do_dia_model.dart'; // Importar o novo modelo
+
+final apiServiceProvider = Provider((ref) => ApiService());
 
 class ApiService {
-  static final ApiService _instance = ApiService._internal();
-  factory ApiService() => _instance;
-  ApiService._internal();
+  ApiService(); // Construtor público para Riverpod
+
+  // Removido o singleton _instance e factory para permitir injeção via Riverpod
+  // static final ApiService _instance = ApiService._internal();
+  // factory ApiService() => _instance;
+  // ApiService._internal();
 
   final HttpService _http = HttpService();
   final AuthService _auth = AuthService();
@@ -333,6 +340,35 @@ class ApiService {
       return ApiResult.error(e.message, e.type);
     } catch (e) {
       return ApiResult.error('Erro ao obter histórico: $e');
+    }
+  }
+
+  // Novo método para obter refeições do dia
+  Future<List<RefeicaoDoDiaModel>> getRefeicoesDoDia(String data) async {
+    try {
+      debugPrint('🍽️ [REFEICAO] Buscando refeições para a data: $data');
+      final response = await _http.get(
+        ApiEndpoints.diarioRefeicoesByData(data),
+      );
+
+      debugPrint('🍽️ [REFEICAO] ✅ Resposta recebida para data: $data');
+      debugPrint('🍽️ [REFEICAO] Status: ${response.statusCode}');
+      debugPrint('🍽️ [REFEICAO] Response: ${response.data}');
+
+      final List<dynamic> dataList = response.data;
+      final refeicoes =
+          dataList.map((json) => RefeicaoDoDiaModel.fromJson(json)).toList();
+
+      return refeicoes;
+    } on AppException catch (e) {
+      debugPrint(
+        '🍽️ [REFEICAO] ❌ AppException ao buscar refeições: ${e.message} (${e.type})',
+      );
+      throw Exception('Erro na API: ${e.message}');
+    } catch (e) {
+      debugPrint('🍽️ [REFEICAO] ❌ ERRO inesperado ao buscar refeições: $e');
+      debugPrint('🍽️ [REFEICAO] ❌ Stack trace: ${StackTrace.current}');
+      throw Exception('Erro inesperado ao buscar refeições: $e');
     }
   }
 

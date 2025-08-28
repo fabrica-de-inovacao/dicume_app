@@ -11,8 +11,8 @@ class AppConstants {
     defaultValue: true,
   );
 
-  static const String apiBaseDevUrl = 'http://192.168.2.8:5050/api/v1';
-  static const String apiBaseUrl = 'http://192.168.2.8:5050/api/v1';
+  static const String apiBaseDevUrl = 'http://10.0.0.189:5050/api/v1';
+  static const String apiBaseUrl = 'http://10.0.0.189:5050/api/v1';
   // Storage Keys
   static const String authTokenKey = 'auth_token';
   static const String userDataKey = 'user_data';

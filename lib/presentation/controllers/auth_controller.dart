@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../../domain/entities/user.dart';
-import '../../domain/entities/auth.dart';
 import '../../domain/entities/failures.dart';
 import '../../data/providers/auth_providers.dart';
 import '../../data/providers/refeicao_providers.dart';

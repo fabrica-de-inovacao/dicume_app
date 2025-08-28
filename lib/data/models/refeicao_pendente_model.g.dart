@@ -37,7 +37,7 @@ Map<String, dynamic> _$RefeicaoPendenteModelToJson(
 ItemRefeicaoPendenteModel _$ItemRefeicaoPendenteModelFromJson(
   Map<String, dynamic> json,
 ) => ItemRefeicaoPendenteModel(
-  alimentoId: (json['alimento_id'] as num).toInt(),
+  alimentoId: json['alimento_id'] as String,
   quantidadeBase: (json['quantidade_base'] as num).toDouble(),
 );
 
@@ -70,7 +70,7 @@ Map<String, dynamic> _$RefeicaoApiRequestModelToJson(
 ItemRefeicaoApiModel _$ItemRefeicaoApiModelFromJson(
   Map<String, dynamic> json,
 ) => ItemRefeicaoApiModel(
-  alimentoId: (json['alimento_id'] as num).toInt(),
+  alimentoId: json['alimento_id'] as String,
   quantidadeBase: (json['quantidade_base'] as num).toDouble(),
 );
 

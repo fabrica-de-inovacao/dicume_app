@@ -43,6 +43,10 @@ class AppColors {
   static const Color danger = Color(0xFFF44336); // Vermelho limpo
   static const Color dangerLight = Color(0xFFFFEBEE); // Fundo vermelho claro
 
+  // Cor de Informação
+  static const Color info = Color(0xFF2196F3); // Azul para informações (pode ser o mesmo que secondary)
+  static const Color infoLight = Color(0xFFE3F2FD); // Fundo azul claro
+
   // Estados Interativos
   static const Color hover = Color(0x08000000); // Hover muito sutil
   static const Color pressed = Color(0x12000000); // Press sutil

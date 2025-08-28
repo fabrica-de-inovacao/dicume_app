@@ -5,27 +5,54 @@ import '../../../domain/entities/alimento.dart'; // Importar a entidade Alimento
 import '../../../core/utils/alimento_display_helper.dart'; // Importar o helper
 // imports ajustados: removidos arquivos não usados para evitar warnings/erros
 
-class AlimentoDetailsBottomSheet extends StatelessWidget {
+class AlimentoDetailsBottomSheet extends StatefulWidget {
   final Alimento alimento;
 
   const AlimentoDetailsBottomSheet({super.key, required this.alimento});
 
   @override
+  State<AlimentoDetailsBottomSheet> createState() =>
+      _AlimentoDetailsBottomSheetState();
+}
+
+class _AlimentoDetailsBottomSheetState
+    extends State<AlimentoDetailsBottomSheet> {
+  double _quantidade = 0.0; // Valor inicial da quantidade
+  double _minQuantidade = 1.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tentar extrair a menor unidade da recomendação de consumo se for numérica
+    final recomendacao = widget.alimento.recomendacaoConsumo.toLowerCase();
+    final regex = RegExp(
+      r'(\d+(\.\d+)?)',
+    ); // Captura números inteiros ou decimais
+    final match = regex.firstMatch(recomendacao);
+    if (match != null) {
+      final valor = double.tryParse(match.group(1)!);
+      if (valor != null && valor > 0) {
+        _minQuantidade = valor;
+        _quantidade = valor;
+      }
+    } else {
+      _minQuantidade = 1.0;
+      _quantidade = 1.0;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final semaforoColor = AlimentoDisplayHelper.getSemaforoColor(
-      alimento.classificacaoCor,
+      widget.alimento.classificacaoCor,
     );
     final textTheme = Theme.of(context).textTheme;
-    final heroTag = 'alimento_image_${alimento.id}';
+    final heroTag = 'alimento_image_${widget.alimento.id}';
     final imageUrl = AlimentoDisplayHelper.getImageUrl(
-      alimento.fotoPorcaoUrl,
+      widget.alimento.fotoPorcaoUrl,
       AppConstants.apiBaseUrl,
     );
 
-    // Use a content-sized bottom sheet so it opens with the minimal height
-    // necessary to display the content. Wrapping with SafeArea and
-    // SingleChildScrollView allows the sheet to size to its children while
-    // remaining scrollable on small screens.
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
@@ -92,7 +119,7 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                               child: Hero(
                                 tag: heroTag,
                                 child: _buildAlimentoImageForModal(
-                                  alimento,
+                                  widget.alimento,
                                   semaforoColor,
                                 ),
                               ),
@@ -127,7 +154,7 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            alimento.nomePopular,
+                            widget.alimento.nomePopular,
                             style: textTheme.titleLarge?.copyWith(
                               color: AppColors.textPrimary,
                               fontWeight: FontWeight.w700,
@@ -145,7 +172,7 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                                   alpha: 0.08,
                                 ),
                                 label: Text(
-                                  alimento.grupoDicume,
+                                  widget.alimento.grupoDicume,
                                   style: textTheme.labelSmall?.copyWith(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -163,7 +190,8 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                                   alpha: 0.08,
                                 ),
                                 label: Text(
-                                  alimento.classificacaoCor.toUpperCase(),
+                                  widget.alimento.classificacaoCor
+                                      .toUpperCase(),
                                   style: textTheme.labelSmall?.copyWith(
                                     color: semaforoColor,
                                     fontWeight: FontWeight.w700,
@@ -196,28 +224,28 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                 // informações detalhadas em seções com espaçamento maior e separadores
                 _buildDetailRow(
                   'Grupo DICUMÊ',
-                  alimento.grupoDicume,
+                  widget.alimento.grupoDicume,
                   textTheme,
                 ),
                 const SizedBox(height: 6),
                 _buildDetailRow(
                   'Índice Glicêmico',
                   AlimentoDisplayHelper.getIGClassificacaoFriendly(
-                    alimento.igClassificacao,
+                    widget.alimento.igClassificacao,
                   ),
                   textTheme,
                 ),
                 const SizedBox(height: 6),
                 _buildDetailRow(
                   'Grupo Nutricional',
-                  alimento.grupoNutricional,
+                  widget.alimento.grupoNutricional,
                   textTheme,
                 ),
                 const SizedBox(height: 6),
                 _buildDetailRow(
                   'Tipo de Alimento',
                   AlimentoDisplayHelper.getGuiaAlimentarFriendly(
-                    alimento.guiaAlimentarClass,
+                    widget.alimento.guiaAlimentarClass,
                   ),
                   textTheme,
                 ),
@@ -244,7 +272,7 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                             ),
                             label: Text(
                               AlimentoDisplayHelper.getRecomendacaoConsumoFriendly(
-                                alimento.recomendacaoConsumo,
+                                widget.alimento.recomendacaoConsumo,
                               ),
                               style: textTheme.bodyMedium?.copyWith(
                                 color: semaforoColor,
@@ -256,11 +284,11 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       // Observação: quando a recomendação for 'a_vontade' não mostramos quantidade
-                      if (alimento.recomendacaoConsumo.toLowerCase() !=
+                      if (widget.alimento.recomendacaoConsumo.toLowerCase() !=
                           'a_vontade')
                         Text(
                           _formatQuantidadeRecomendacao(
-                            alimento.recomendacaoConsumo,
+                            widget.alimento.recomendacaoConsumo,
                           ),
                           style: textTheme.bodySmall?.copyWith(
                             color: AppColors.textSecondary,
@@ -272,15 +300,25 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
 
                 const SizedBox(height: 18),
 
+                // Seletor de quantidade
+                _buildQuantidadeSelector(textTheme),
+                const SizedBox(height: 18),
+
                 // Botão: adicionar ao prato
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () async {
-                      if (context.mounted) {
-                        Navigator.of(context).pop(alimento); // retorna alimento
-                      }
-                    },
+                    onPressed:
+                        _quantidade > 0
+                            ? () async {
+                              if (context.mounted) {
+                                Navigator.of(context).pop({
+                                  'alimento': widget.alimento,
+                                  'quantidade': _quantidade,
+                                });
+                              }
+                            }
+                            : null,
                     icon: const Icon(Icons.add_rounded),
                     label: const Text('Adicionar ao Prato'),
                     style: ElevatedButton.styleFrom(
@@ -303,6 +341,105 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
     );
   }
 
+  Widget _buildQuantidadeSelector(TextTheme textTheme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quantidade:',
+          style: textTheme.bodyMedium?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  setState(() {
+                    if (_quantidade > _minQuantidade) {
+                      _quantidade -= _minQuantidade;
+                      if (_quantidade < _minQuantidade)
+                        _quantidade = _minQuantidade;
+                    }
+                  });
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.outline),
+                  ),
+                  child: const Icon(Icons.remove_circle_outline, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              width: 72,
+              alignment: Alignment.center,
+              child: Text(
+                _quantidade.toStringAsFixed(
+                  _quantidade.truncateToDouble() == _quantidade ? 0 : 2,
+                ),
+                style: textTheme.headlineSmall?.copyWith(
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 28,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () {
+                  setState(() {
+                    _quantidade += _minQuantidade;
+                  });
+                },
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.outline),
+                  ),
+                  child: const Icon(Icons.add_circle_outline, size: 28),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                _getUnidadeMedida(widget.alimento.recomendacaoConsumo),
+                style: textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _getUnidadeMedida(String recomendacao) {
+    final parts = recomendacao.split('_');
+    if (parts.length > 1) {
+      return parts.last.replaceAll(';', ''); // Ex: 'colheres_de_sopa'
+    }
+    return 'unidade(s)';
+  }
+
   Widget _buildDetailRow(String label, String value, TextTheme textTheme) {
     IconData? icon;
     Color? iconColor;
@@ -312,7 +449,7 @@ class AlimentoDetailsBottomSheet extends StatelessWidget {
       case 'Grupo DICUMÊ':
         icon = Icons.category_rounded;
         break;
-      case 'Índice Glicêmico':
+      case 'Índice Gêmico':
         icon = Icons.bloodtype_rounded;
         break;
       case 'Grupo Nutricional':

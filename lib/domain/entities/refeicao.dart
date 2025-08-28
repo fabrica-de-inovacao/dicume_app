@@ -47,7 +47,7 @@ class RefeicaoPendente extends Equatable {
 }
 
 class ItemRefeicaoPendente extends Equatable {
-  final int alimentoId;
+  final String alimentoId;
   final double quantidadeBase;
 
   const ItemRefeicaoPendente({

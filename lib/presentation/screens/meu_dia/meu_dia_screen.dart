@@ -2,118 +2,82 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/services/feedback_service.dart';
-import '../../../core/services/mock_data_service_regional.dart';
+import '../../../core/services/api_service.dart';
+import '../../../data/models/refeicao_do_dia_model.dart';
+import 'package:intl/intl.dart';
+import '../../../core/utils/alimento_display_helper.dart'; // Importar o helper
 
-class MeuDiaScreen extends StatefulWidget {
+final selectedDateProvider = StateProvider<DateTime>((ref) => DateTime.now());
+
+class MeuDiaScreen extends ConsumerStatefulWidget {
   const MeuDiaScreen({super.key});
 
   @override
-  State<MeuDiaScreen> createState() => _MeuDiaScreenState();
+  ConsumerState<MeuDiaScreen> createState() => _MeuDiaScreenState();
 }
 
-class _MeuDiaScreenState extends State<MeuDiaScreen> {
-  final mockService = SuperMockDataService();
-  late List<Map<String, dynamic>> refeicoesHoje;
-  late Map<String, int> resumoDia;
+class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
+  late Future<List<RefeicaoDoDiaModel>> _refeicoesFuture;
+  List<RefeicaoDoDiaModel> _refeicoesHoje = [];
+  Map<String, int> _resumoDia = {'verde': 0, 'amarelo': 0, 'vermelho': 0, 'total': 0};
 
   @override
   void initState() {
     super.initState();
-    _carregarDadosDia();
+    _carregarDadosDia(ref.read(selectedDateProvider));
   }
 
-  void _carregarDadosDia() {
-    // Simula as refeições do dia atual
-    refeicoesHoje = [
-      {
-        'tipo': 'Café da Manhã',
-        'horario': '07:30',
-        'alimentos': [
-          {
-            'nome': 'Tapioca',
-            'semaforo': 'amarelo',
-            'quantidade': '2 unidades',
-          },
-          {'nome': 'Banana', 'semaforo': 'verde', 'quantidade': '1 unidade'},
-          {'nome': 'Café', 'semaforo': 'verde', 'quantidade': '1 xícara'},
-        ],
-        'icone': Icons.free_breakfast,
-        'cor': AppColors.warning,
-      },
-      {
-        'tipo': 'Lanche da Manhã',
-        'horario': '10:00',
-        'alimentos': [
-          {
-            'nome': 'Castanha do Pará',
-            'semaforo': 'verde',
-            'quantidade': '5 unidades',
-          },
-        ],
-        'icone': Icons.local_cafe,
-        'cor': AppColors.success,
-      },
-      {
-        'tipo': 'Almoço',
-        'horario': '12:30',
-        'alimentos': [
-          {
-            'nome': 'Arroz integral',
-            'semaforo': 'amarelo',
-            'quantidade': '3 colheres',
-          },
-          {
-            'nome': 'Feijão verde',
-            'semaforo': 'verde',
-            'quantidade': '1 concha',
-          },
-          {
-            'nome': 'Peixe grelhado',
-            'semaforo': 'verde',
-            'quantidade': '1 filé',
-          },
-          {
-            'nome': 'Salada mista',
-            'semaforo': 'verde',
-            'quantidade': '1 prato',
-          },
-        ],
-        'icone': Icons.restaurant,
-        'cor': AppColors.success,
-      },
-      {
-        'tipo': 'Lanche da Tarde',
-        'horario': '15:30',
-        'alimentos': [
-          {'nome': 'Caju', 'semaforo': 'verde', 'quantidade': '2 unidades'},
-          {'nome': 'Água de coco', 'semaforo': 'verde', 'quantidade': '1 copo'},
-        ],
-        'icone': Icons.local_drink,
-        'cor': AppColors.success,
-      },
-    ];
+  @override
+  void didUpdateWidget(covariant MeuDiaScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Recarrega os dados se a data selecionada mudar
+    final newDate = ref.read(selectedDateProvider);
+    if (newDate != ref.read(selectedDateProvider)) {
+      _carregarDadosDia(newDate);
+    }
+  }
 
-    // Calcula resumo do dia
-    resumoDia = _calcularResumoDia();
+  void _carregarDadosDia(DateTime date) {
+    final apiService = ref.read(apiServiceProvider);
+    final formattedDate = DateFormat('yyyy-MM-dd').format(date);
+    _refeicoesFuture = apiService.getRefeicoesDoDia(formattedDate).then((refeicoes) {
+      setState(() {
+        _refeicoesHoje = refeicoes;
+        _resumoDia = _calcularResumoDia();
+      });
+      return refeicoes;
+    }).catchError((error) {
+      // Tratar erro, talvez mostrar um SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao carregar refeições: $error'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+      setState(() {
+        _refeicoesHoje = [];
+        _resumoDia = {'verde': 0, 'amarelo': 0, 'vermelho': 0, 'total': 0};
+      });
+      return [];
+    });
   }
 
   Map<String, int> _calcularResumoDia() {
     int verde = 0, amarelo = 0, vermelho = 0;
 
-    for (var refeicao in refeicoesHoje) {
-      for (var alimento in refeicao['alimentos']) {
-        switch (alimento['semaforo']) {
-          case 'verde':
-            verde++;
-            break;
-          case 'amarelo':
-            amarelo++;
-            break;
-          case 'vermelho':
-            vermelho++;
-            break;
-        }
+    for (var refeicao in _refeicoesHoje) {
+      switch (refeicao.classificacaoFinal.toLowerCase()) {
+        case 'verde':
+          verde++;
+          break;
+        case 'amarelo':
+          amarelo++;
+          break;
+        case 'vermelho':
+          vermelho++;
+          break;
       }
     }
 
@@ -125,8 +89,8 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
     };
   }
 
-  Color _getSemaforoColor(String semaforo) {
-    switch (semaforo) {
+  Color _getSemaforoColor(String classificacao) {
+    switch (classificacao.toLowerCase()) {
       case 'verde':
         return AppColors.success;
       case 'amarelo':
@@ -139,7 +103,8 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
   }
 
   String _getStatusDia() {
-    final porcentagemVerde = (resumoDia['verde']! / resumoDia['total']!) * 100;
+    if (_resumoDia['total'] == 0) return 'Nenhuma refeição registrada hoje.';
+    final porcentagemVerde = (_resumoDia['verde']! / _resumoDia['total']!) * 100;
 
     if (porcentagemVerde >= 70) {
       return 'Excelente! Dia muito saudável 🌟';
@@ -154,6 +119,8 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final textTheme = theme.textTheme;
+    final selectedDate = ref.watch(selectedDateProvider);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -178,7 +145,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
             icon: const Icon(Icons.calendar_today, color: AppColors.primary),
             onPressed: () {
               FeedbackService().lightTap();
-              _mostrarSeletorData(context);
+              _mostrarSeletorData(context, selectedDate);
             },
           ),
         ],
@@ -189,11 +156,39 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Resumo do dia
-            _buildResumoDia(textTheme),
+            _buildResumoDia(textTheme, selectedDate),
             const SizedBox(height: 24),
 
             // Lista de refeições
-            _buildListaRefeicoes(textTheme),
+            FutureBuilder<List<RefeicaoDoDiaModel>>(
+              future: _refeicoesFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                } else if (snapshot.hasError) {
+                  // Exibir erro real da API
+                  return Center(
+                    child: Text(
+                      'Erro ao carregar refeições: ${snapshot.error}',
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.error),
+                    ),
+                  );
+                } else if (snapshot.hasData && snapshot.data!.isEmpty) {
+                  // Quando não há dados, mas sem erro
+                  return Center(
+                    child: Text(
+                      'Nenhuma refeição registrada para esta data.',
+                      style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  );
+                } else if (snapshot.hasData) {
+                  return _buildListaRefeicoes(textTheme, snapshot.data!);
+                } else {
+                  // Caso padrão, pode ser um estado inicial sem dados
+                  return const SizedBox.shrink();
+                }
+              },
+            ),
 
             const SizedBox(height: 100), // Espaço para FAB
           ],
@@ -212,8 +207,10 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
     );
   }
 
-  Widget _buildResumoDia(TextTheme textTheme) {
-    final porcentagemVerde = (resumoDia['verde']! / resumoDia['total']!) * 100;
+  Widget _buildResumoDia(TextTheme textTheme, DateTime selectedDate) {
+    final porcentagemVerde = _resumoDia['total']! > 0
+        ? (_resumoDia['verde']! / _resumoDia['total']!) * 100
+        : 0.0;
 
     return DicumeElegantCard(
       child: Column(
@@ -239,7 +236,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hoje, ${DateTime.now().day}/${DateTime.now().month}',
+                      '${DateFormat('dd/MM').format(selectedDate)}',
                       style: textTheme.titleMedium?.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w600,
@@ -272,17 +269,17 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                   children: [
                     _buildIndicadorSemaforo(
                       cor: AppColors.success,
-                      valor: resumoDia['verde']!,
+                      valor: _resumoDia['verde']!,
                       label: 'Verde',
                     ),
                     _buildIndicadorSemaforo(
                       cor: AppColors.warning,
-                      valor: resumoDia['amarelo']!,
+                      valor: _resumoDia['amarelo']!,
                       label: 'Amarelo',
                     ),
                     _buildIndicadorSemaforo(
                       cor: AppColors.error,
-                      valor: resumoDia['vermelho']!,
+                      valor: _resumoDia['vermelho']!,
                       label: 'Vermelho',
                     ),
                   ],
@@ -298,9 +295,9 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                   ),
                   child: Row(
                     children: [
-                      if (resumoDia['verde']! > 0)
+                      if (_resumoDia['verde']! > 0)
                         Expanded(
-                          flex: resumoDia['verde']!,
+                          flex: _resumoDia['verde']!,
                           child: Container(
                             decoration: BoxDecoration(
                               color: AppColors.success,
@@ -308,9 +305,9 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                             ),
                           ),
                         ),
-                      if (resumoDia['amarelo']! > 0)
+                      if (_resumoDia['amarelo']! > 0)
                         Expanded(
-                          flex: resumoDia['amarelo']!,
+                          flex: _resumoDia['amarelo']!,
                           child: Container(
                             decoration: BoxDecoration(
                               color: AppColors.warning,
@@ -318,9 +315,9 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                             ),
                           ),
                         ),
-                      if (resumoDia['vermelho']! > 0)
+                      if (_resumoDia['vermelho']! > 0)
                         Expanded(
-                          flex: resumoDia['vermelho']!,
+                          flex: _resumoDia['vermelho']!,
                           child: Container(
                             decoration: BoxDecoration(
                               color: AppColors.error,
@@ -385,7 +382,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
     );
   }
 
-  Widget _buildListaRefeicoes(TextTheme textTheme) {
+  Widget _buildListaRefeicoes(TextTheme textTheme, List<RefeicaoDoDiaModel> refeicoes) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -398,7 +395,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
         ),
         const SizedBox(height: 16),
 
-        ...refeicoesHoje.map(
+        ...refeicoes.map(
           (refeicao) => _buildCardRefeicao(refeicao, textTheme),
         ),
       ],
@@ -406,7 +403,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
   }
 
   Widget _buildCardRefeicao(
-    Map<String, dynamic> refeicao,
+    RefeicaoDoDiaModel refeicao,
     TextTheme textTheme,
   ) {
     return Container(
@@ -421,12 +418,12 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (refeicao['cor'] as Color).withValues(alpha: 0.15),
+                    color: (refeicao.cor ?? AppColors.grey400).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
-                    refeicao['icone'],
-                    color: refeicao['cor'],
+                    refeicao.icone ?? Icons.fastfood,
+                    color: refeicao.cor ?? AppColors.grey400,
                     size: 24,
                   ),
                 ),
@@ -436,14 +433,14 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        refeicao['tipo'],
+                        refeicao.tipoRefeicao,
                         style: textTheme.titleMedium?.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
-                        refeicao['horario'],
+                        refeicao.horario ?? 'N/A',
                         style: textTheme.bodyMedium?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -463,7 +460,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
             const SizedBox(height: 16),
 
             // Lista de alimentos
-            ...refeicao['alimentos'].map<Widget>((alimento) {
+            ...refeicao.itens.map<Widget>((item) {
               return Container(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(12),
@@ -478,7 +475,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                       width: 12,
                       height: 12,
                       decoration: BoxDecoration(
-                        color: _getSemaforoColor(alimento['semaforo']),
+                        color: _getSemaforoColor(refeicao.classificacaoFinal),
                         shape: BoxShape.circle,
                       ),
                     ),
@@ -487,7 +484,7 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
                     // Nome do alimento
                     Expanded(
                       child: Text(
-                        alimento['nome'],
+                        item.alimentos.nomePopular,
                         style: textTheme.bodyMedium?.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w500,
@@ -497,7 +494,9 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
 
                     // Quantidade
                     Text(
-                      alimento['quantidade'],
+                      AlimentoDisplayHelper.getRecomendacaoConsumoFriendly(
+                        '${item.quantidadeBase} ${item.alimentos.recomendacaoConsumo}',
+                      ),
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -512,10 +511,10 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
     );
   }
 
-  void _mostrarSeletorData(BuildContext context) {
+  void _mostrarSeletorData(BuildContext context, DateTime initialDate) {
     showDatePicker(
       context: context,
-      initialDate: DateTime.now(),
+      initialDate: initialDate,
       firstDate: DateTime.now().subtract(const Duration(days: 365)),
       lastDate: DateTime.now(),
       builder: (context, child) {
@@ -530,17 +529,17 @@ class _MeuDiaScreenState extends State<MeuDiaScreen> {
       },
     ).then((selectedDate) {
       if (selectedDate != null) {
-        // Aqui carregaria os dados do dia selecionado
         FeedbackService().mediumTap();
+        ref.read(selectedDateProvider.notifier).state = selectedDate;
+        _carregarDadosDia(selectedDate);
       }
     });
   }
 
-  void _editarRefeicao(Map<String, dynamic> refeicao) {
-    // Aqui abriria um modal ou navegaria para editar a refeição
+  void _editarRefeicao(RefeicaoDoDiaModel refeicao) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Editando ${refeicao['tipo']}...'),
+        content: Text('Editando ${refeicao.tipoRefeicao}...'),
         backgroundColor: AppColors.primary,
       ),
     );

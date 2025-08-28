@@ -67,7 +67,7 @@ class RefeicaoPendenteModel {
 @JsonSerializable()
 class ItemRefeicaoPendenteModel {
   @JsonKey(name: 'alimento_id')
-  final int alimentoId;
+  final String alimentoId;
   @JsonKey(name: 'quantidade_base')
   final double quantidadeBase;
 
@@ -133,7 +133,7 @@ class RefeicaoApiRequestModel {
 @JsonSerializable()
 class ItemRefeicaoApiModel {
   @JsonKey(name: 'alimento_id')
-  final int alimentoId;
+  final String alimentoId;
   @JsonKey(name: 'quantidade_base')
   final double quantidadeBase;
 
