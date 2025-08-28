@@ -1,0 +1,96 @@
+{
+  "success": true,
+  "token": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6IllaN0kvd2p4blEyZGU1dWciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2RubWh0YW5wZXV5ZHJnaWFmZ3h4LnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNzE0NzBlMy1hZTM5LTRhZTAtOWM0Ny0yNzU5ZDQ4NTdkYjEiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU2MjU4MjA0LCJpYXQiOjE3NTYyNTQ2MDQsImVtYWlsIjoiY29udGF0b3ZzY2huZWlkZXJAZ21haWwuY29tIiwicGhvbmUiOiIiLCJhcHBfbWV0YWRhdGEiOnsicHJvdmlkZXIiOiJlbWFpbCIsInByb3ZpZGVycyI6WyJlbWFpbCJdfSwidXNlcl9tZXRhZGF0YSI6eyJlbWFpbCI6ImNvbnRhdG92c2NobmVpZGVyQGdtYWlsLmNvbSIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJub21lX2V4aWJpY2FvIjoiREVWLVNDSE5FSURFUiIsInBob25lX3ZlcmlmaWVkIjpmYWxzZSwic3ViIjoiYTcxNDcwZTMtYWUzOS00YWUwLTljNDctMjc1OWQ0ODU3ZGIxIn0sInJvbGUiOiJhdXRoZW50aWNhdGVkIiwiYWFsIjoiYWFsMSIsImFtciI6W3sibWV0aG9kIjoicGFzc3dvcmQiLCJ0aW1lc3RhbXAiOjE3NTYyNTQ2MDR9XSwic2Vzc2lvbl9pZCI6IjlhODk2YWY1LTMwMjAtNDI4Zi04NzEyLTAwOTI1MzlmMzk5YyIsImlzX2Fub255bW91cyI6ZmFsc2V9.QpTNCPqsXiKAiiNc8ntl1glzZR12R1wGuB7shnTk5Yw",
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "expires_at": 1756258204,
+    "refresh_token": "xp3azbqpplgo",
+    "user": {
+      "id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+      "aud": "authenticated",
+      "role": "authenticated",
+      "email": "contatovschneider@gmail.com",
+      "email_confirmed_at": "2025-08-19T19:45:57.730137Z",
+      "phone": "",
+      "confirmed_at": "2025-08-19T19:45:57.730137Z",
+      "last_sign_in_at": "2025-08-27T00:30:04.074570629Z",
+      "app_metadata": {
+        "provider": "email",
+        "providers": ["email"]
+      },
+      "user_metadata": {
+        "email": "contatovschneider@gmail.com",
+        "email_verified": true,
+        "nome_exibicao": "DEV-SCHNEIDER",
+        "phone_verified": false,
+        "sub": "a71470e3-ae39-4ae0-9c47-2759d4857db1"
+      },
+      "identities": [
+        {
+          "identity_id": "eb9c4126-0548-4035-ab2c-2527f2ab059f",
+          "id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+          "user_id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+          "identity_data": {
+            "email": "contatovschneider@gmail.com",
+            "email_verified": false,
+            "nome_exibicao": "DEV-SCHNEIDER",
+            "phone_verified": false,
+            "sub": "a71470e3-ae39-4ae0-9c47-2759d4857db1"
+          },
+          "provider": "email",
+          "last_sign_in_at": "2025-08-19T19:45:57.727547Z",
+          "created_at": "2025-08-19T19:45:57.727609Z",
+          "updated_at": "2025-08-19T19:45:57.727609Z",
+          "email": "contatovschneider@gmail.com"
+        }
+      ],
+      "created_at": "2025-08-19T19:45:57.723871Z",
+      "updated_at": "2025-08-27T00:30:04.078911Z",
+      "is_anonymous": false
+    }
+  },
+  "usuario": {
+    "id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+    "aud": "authenticated",
+    "role": "authenticated",
+    "email": "contatovschneider@gmail.com",
+    "email_confirmed_at": "2025-08-19T19:45:57.730137Z",
+    "phone": "",
+    "confirmed_at": "2025-08-19T19:45:57.730137Z",
+    "last_sign_in_at": "2025-08-27T00:30:04.074570629Z",
+    "app_metadata": {
+      "provider": "email",
+      "providers": ["email"]
+    },
+    "user_metadata": {
+      "email": "contatovschneider@gmail.com",
+      "email_verified": true,
+      "nome_exibicao": "DEV-SCHNEIDER",
+      "phone_verified": false,
+      "sub": "a71470e3-ae39-4ae0-9c47-2759d4857db1"
+    },
+    "identities": [
+      {
+        "identity_id": "eb9c4126-0548-4035-ab2c-2527f2ab059f",
+        "id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+        "user_id": "a71470e3-ae39-4ae0-9c47-2759d4857db1",
+        "identity_data": {
+          "email": "contatovschneider@gmail.com",
+          "email_verified": false,
+          "nome_exibicao": "DEV-SCHNEIDER",
+          "phone_verified": false,
+          "sub": "a71470e3-ae39-4ae0-9c47-2759d4857db1"
+        },
+        "provider": "email",
+        "last_sign_in_at": "2025-08-19T19:45:57.727547Z",
+        "created_at": "2025-08-19T19:45:57.727609Z",
+        "updated_at": "2025-08-19T19:45:57.727609Z",
+        "email": "contatovschneider@gmail.com"
+      }
+    ],
+    "created_at": "2025-08-19T19:45:57.723871Z",
+    "updated_at": "2025-08-27T00:30:04.078911Z",
+    "is_anonymous": false
+  }
+}

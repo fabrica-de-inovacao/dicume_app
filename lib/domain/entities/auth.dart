@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-enum AuthProviderType { google, sms }
+enum AuthProviderType { google }
 
 class AuthCredential extends Equatable {
   final AuthProviderType provider;
@@ -71,26 +71,4 @@ class LoginRequest extends Equatable {
   List<Object?> get props => [provider, credential, metadata];
 }
 
-class SMSVerificationRequest extends Equatable {
-  final String phoneNumber;
-  final String verificationCode;
-  final String sessionId;
-
-  const SMSVerificationRequest({
-    required this.phoneNumber,
-    required this.verificationCode,
-    required this.sessionId,
-  });
-
-  @override
-  List<Object?> get props => [phoneNumber, verificationCode, sessionId];
-}
-
-class SMSCodeRequest extends Equatable {
-  final String phoneNumber;
-
-  const SMSCodeRequest({required this.phoneNumber});
-
-  @override
-  List<Object?> get props => [phoneNumber];
-}
+// SMS flows removed from the domain - not used in this project

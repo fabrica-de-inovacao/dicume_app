@@ -8,15 +8,7 @@ abstract class AuthRepository {
   /// Retorna [User] em caso de sucesso ou [AuthFailure] em caso de erro
   Future<Either<AuthFailure, User>> signInWithGoogle();
 
-  /// Solicita código de verificação por SMS
-  /// Retorna sessionId em caso de sucesso ou [AuthFailure] em caso de erro
-  Future<Either<AuthFailure, String>> requestSMSCode(String phoneNumber);
-
-  /// Verifica código SMS e realiza login
-  /// Retorna [User] em caso de sucesso ou [AuthFailure] em caso de erro
-  Future<Either<AuthFailure, User>> verifyAndSignInWithSMS(
-    SMSVerificationRequest request,
-  );
+  // SMS flows removed (not supported)
 
   /// Realiza logout
   /// Retorna [AuthFailure] em caso de erro

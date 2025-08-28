@@ -1,0 +1,27 @@
+Nome do alias: dicume
+Data de criação: 25/06/2025
+Tipo de entrada: PrivateKeyEntry
+Comprimento da cadeia de certificados: 1
+Certificado[1]:
+Proprietário: CN=Vinicius Schneider, OU=Dep. Tecnologia e Inovacao, O=IFMA, L=Imperatriz, ST=MA, C=BR
+Emissor: CN=Vinicius Schneider, OU=Dep. Tecnologia e Inovacao, O=IFMA, L=Imperatriz, ST=MA, C=BR
+Número de série: 593a2e95
+Válido de Wed Jun 25 18:00:29 BRT 2025 até Sun Nov 10 18:00:29 BRT 2052
+Fingerprints do certificado:
+	 MD5:  B8:9A:B3:C0:36:7E:31:BE:8D:CD:73:7C:EC:53:7B:04:3D:B7:D9:E4
+	 SHA1: 6C:64:04:AD:47:09:8F:96:1F:5B:86:8E:20:6B:67:80:2E:5F:BD:D6:19:BD:3C:69:B8:12:54:CE:01:AA:D2:74
+	 SHA256: SHA256withRSA
+Nome do algoritmo de assinatura: Chave RSA de 2048 bits
+Algoritmo de Chave Pública do Assunto: 3
+Versão: {10}
+
+Extensões: 
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 68 F5 09 C9 00 2F 4F 99   F4 F3 8E F3 3F 56 8D A4  h..../O.....?V..
+0010: 00 4F 1A 0C                                        .O..
+]
+]
+

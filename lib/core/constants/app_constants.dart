@@ -11,14 +11,15 @@ class AppConstants {
     defaultValue: true,
   );
 
+  static const String apiBaseDevUrl = 'http://10.0.0.189:5050/api/v1';
+  static const String apiBaseUrl = 'http://10.0.0.189:5050/api/v1';
   // Storage Keys
   static const String authTokenKey = 'auth_token';
   static const String userDataKey = 'user_data';
   static const String alimentosCacheKey = 'alimentos_cache';
   static const String lastSyncKey = 'last_sync';
-
   // Database
-  static const String isarDatabaseName = 'dicume_database';
+  static const String databaseName = 'dicume_database.db';
 
   // Validation
   static const int minPasswordLength = 6;

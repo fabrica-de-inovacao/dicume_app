@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
@@ -21,20 +24,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
   void _navigateToNextScreen() async {
     await Future.delayed(AnimationConstants.splashDuration);
+    if (!mounted) return;
 
-    if (mounted) {
-      // TODO: Verificar se usuário está logado
-      // Por enquanto, vai direto para uma tela temporária
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          pageBuilder:
-              (context, animation, secondaryAnimation) =>
-                  const TemporaryHomeScreen(),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-        ),
-      );
+    try {
+      final authService = AuthService();
+      final first = await authService.isFirstLaunch();
+      if (first) {
+        // Se for primeira execução, mostrar onboarding
+        context.go(AppRoutes.onboarding);
+      } else {
+        context.go(AppRoutes.home);
+      }
+    } catch (e) {
+      // Em caso de erro, fallback para home
+      debugPrint('[SPLASH] erro ao decidir próxima tela: $e');
+      context.go(AppRoutes.home);
     }
   }
 

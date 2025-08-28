@@ -7,8 +7,6 @@ import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/usecases/sign_in_with_google_usecase.dart';
-import '../../domain/usecases/request_sms_code_usecase.dart';
-import '../../domain/usecases/verify_and_sign_in_with_sms_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../domain/usecases/is_authenticated_usecase.dart';
@@ -27,8 +25,8 @@ final dioProvider = Provider<Dio>((ref) {
     BaseOptions(
       baseUrl:
           AppConstants.isDevelopment
-              ? ApiEndpoints.baseUrlDev
-              : ApiEndpoints.baseUrl,
+              ? AppConstants.apiBaseDevUrl
+              : AppConstants.apiBaseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
@@ -63,7 +61,6 @@ final googleSignInProvider = Provider<GoogleSignIn>((ref) {
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage(
     aOptions: AndroidOptions(
-      encryptedSharedPreferences: true,
       sharedPreferencesName: 'dicume_secure_prefs',
       preferencesKeyPrefix: 'dicume_',
     ),
@@ -121,16 +118,7 @@ final signInWithGoogleUseCaseProvider = Provider<SignInWithGoogleUseCase>((
   return SignInWithGoogleUseCase(repository);
 });
 
-final requestSMSCodeUseCaseProvider = Provider<RequestSMSCodeUseCase>((ref) {
-  final repository = ref.watch(authRepositoryProvider);
-  return RequestSMSCodeUseCase(repository);
-});
-
-final verifyAndSignInWithSMSUseCaseProvider =
-    Provider<VerifyAndSignInWithSMSUseCase>((ref) {
-      final repository = ref.watch(authRepositoryProvider);
-      return VerifyAndSignInWithSMSUseCase(repository);
-    });
+// SMS usecases/providers removed
 
 final signOutUseCaseProvider = Provider<SignOutUseCase>((ref) {
   final repository = ref.watch(authRepositoryProvider);
