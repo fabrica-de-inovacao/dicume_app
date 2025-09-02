@@ -65,7 +65,7 @@ final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
       preferencesKeyPrefix: 'dicume_',
     ),
     iOptions: IOSOptions(
-      groupId: 'group.com.dicume.app',
+      groupId: 'group.br.app.dicume',
       accountName: 'dicume_account',
     ),
   );

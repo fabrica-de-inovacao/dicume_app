@@ -1,4 +1,4 @@
-package com.dicume.app
+package br.app.dicume
 
 import io.flutter.embedding.android.FlutterActivity
 

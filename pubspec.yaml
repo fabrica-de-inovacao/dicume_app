@@ -58,6 +58,16 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
 
+  # Flutter Launcher Icons
+  flutter_launcher_icons: ^0.14.4
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/app_icon.png"
+  android_adaptive_icon_foreground: "assets/icons/app_icon_foreground.png"
+  android_adaptive_icon_background: "#6D4C41"
+
   # Code Generation
   riverpod_generator: ^2.3.9
   build_runner: ^2.4.7
