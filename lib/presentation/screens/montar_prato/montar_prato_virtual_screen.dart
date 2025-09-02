@@ -203,7 +203,7 @@ class _MontarPratoVirtualScreenState
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
+                          color: Colors.black.withValues(alpha: 0.06),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -553,28 +553,28 @@ class _MontarPratoVirtualScreenState
     );
   }
 
-  Widget _buildMacroNutrienteItem(
-    TextTheme textTheme,
-    String title,
-    String value,
-    Color color,
-  ) {
-    return Column(
-      children: [
-        Text(
-          value,
-          style: textTheme.bodyLarge?.copyWith(
-            color: color,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        Text(
-          title,
-          style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-        ),
-      ],
-    );
-  }
+  // Widget _buildMacroNutrienteItem(
+  //   TextTheme textTheme,
+  //   String title,
+  //   String value,
+  //   Color color,
+  // ) {
+  //   return Column(
+  //     children: [
+  //       Text(
+  //         value,
+  //         style: textTheme.bodyLarge?.copyWith(
+  //           color: color,
+  //           fontWeight: FontWeight.w600,
+  //         ),
+  //       ),
+  //       Text(
+  //         title,
+  //         style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   Widget _buildEmptyStatePrato(TextTheme textTheme) {
     return Center(
@@ -682,7 +682,7 @@ class _MontarPratoVirtualScreenState
       PageRouteBuilder(
         opaque: false,
         barrierDismissible: true,
-        barrierColor: Colors.black.withOpacity(0.35),
+        barrierColor: Colors.black.withValues(alpha: 0.35),
         pageBuilder: (context, animation, secondaryAnimation) {
           return FadeTransition(
             opacity: animation,

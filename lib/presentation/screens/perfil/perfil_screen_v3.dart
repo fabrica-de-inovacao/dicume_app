@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/services/feedback_service.dart';
-import '../../controllers/auth_controller.dart'; // Importar authControllerProvider
-import '../../../data/providers/refeicao_providers.dart'; // Importar perfilStatusProvider
+
 
 class PerfilScreenV3 extends ConsumerStatefulWidget {
   const PerfilScreenV3({super.key});

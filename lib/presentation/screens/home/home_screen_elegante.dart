@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -23,8 +22,8 @@ class HomeScreenElegante extends ConsumerStatefulWidget {
 
 class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
   // Para área de desenvolvedor
-  int _tapCount = 0;
-  DateTime? _lastTapTime;
+  // int _tapCount = 0;
+  // DateTime? _lastTapTime;
 
   @override
   void initState() {
@@ -1057,48 +1056,48 @@ class _HomeScreenEleganteState extends ConsumerState<HomeScreenElegante> {
     );
   }
 
-  void _handleDeveloperTap() {
-    // Só funciona em modo debug
-    if (!kDebugMode) return;
+  // void _handleDeveloperTap() {
+  //   // Só funciona em modo debug
+  //   if (!kDebugMode) return;
 
-    final now = DateTime.now();
+  //   final now = DateTime.now();
 
-    // Reset se passou mais de 2 segundos desde o último tap
-    if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 2) {
-      _tapCount = 1;
-    } else {
-      _tapCount++;
-    }
+  //   // Reset se passou mais de 2 segundos desde o último tap
+  //   if (_lastTapTime == null || now.difference(_lastTapTime!).inSeconds > 2) {
+  //     _tapCount = 1;
+  //   } else {
+  //     _tapCount++;
+  //   }
 
-    _lastTapTime = now;
+  //   _lastTapTime = now;
 
-    // Se chegou a 5 taps, abre a área de desenvolvedor
-    if (_tapCount >= 5) {
-      _tapCount = 0;
-      _lastTapTime = null;
+  //   // Se chegou a 5 taps, abre a área de desenvolvedor
+  //   if (_tapCount >= 5) {
+  //     _tapCount = 0;
+  //     _lastTapTime = null;
 
-      FeedbackService().strongTap();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🧑‍💻 Área de desenvolvedor ativada!'),
-          backgroundColor: AppColors.error,
-          duration: Duration(seconds: 2),
-        ),
-      );
+  //     FeedbackService().strongTap();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(
+  //         content: Text('🧑‍💻 Área de desenvolvedor ativada!'),
+  //         backgroundColor: AppColors.error,
+  //         duration: Duration(seconds: 2),
+  //       ),
+  //     );
 
-      context.go(AppRoutes.developer);
-    } else if (_tapCount >= 3) {
-      // Dica visual após 3 taps
-      FeedbackService().mediumTap();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('🔓 Continue... ($_tapCount/5)'),
-          backgroundColor: AppColors.primary,
-          duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-  }
+  //     context.go(AppRoutes.developer);
+  //   } else if (_tapCount >= 3) {
+  //     // Dica visual após 3 taps
+  //     FeedbackService().mediumTap();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(
+  //         content: Text('🔓 Continue... ($_tapCount/5)'),
+  //         backgroundColor: AppColors.primary,
+  //         duration: const Duration(seconds: 1),
+  //       ),
+  //     );
+  //   }
+  // }
 
   // Métodos auxiliares para dados do usuário
   String _gerarIniciais(String nomeCompleto) {

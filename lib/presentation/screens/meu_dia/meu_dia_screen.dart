@@ -21,7 +21,12 @@ class MeuDiaScreen extends ConsumerStatefulWidget {
 class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
   late Future<List<RefeicaoDoDiaModel>> _refeicoesFuture;
   List<RefeicaoDoDiaModel> _refeicoesHoje = [];
-  Map<String, int> _resumoDia = {'verde': 0, 'amarelo': 0, 'vermelho': 0, 'total': 0};
+  Map<String, int> _resumoDia = {
+    'verde': 0,
+    'amarelo': 0,
+    'vermelho': 0,
+    'total': 0,
+  };
 
   @override
   void initState() {
@@ -42,26 +47,29 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
   void _carregarDadosDia(DateTime date) {
     final apiService = ref.read(apiServiceProvider);
     final formattedDate = DateFormat('yyyy-MM-dd').format(date);
-    _refeicoesFuture = apiService.getRefeicoesDoDia(formattedDate).then((refeicoes) {
-      setState(() {
-        _refeicoesHoje = refeicoes;
-        _resumoDia = _calcularResumoDia();
-      });
-      return refeicoes;
-    }).catchError((error) {
-      // Tratar erro, talvez mostrar um SnackBar
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Erro ao carregar refeições: $error'),
-          backgroundColor: AppColors.error,
-        ),
-      );
-      setState(() {
-        _refeicoesHoje = [];
-        _resumoDia = {'verde': 0, 'amarelo': 0, 'vermelho': 0, 'total': 0};
-      });
-      return [];
-    });
+    _refeicoesFuture = apiService
+        .getRefeicoesDoDia(formattedDate)
+        .then((refeicoes) {
+          setState(() {
+            _refeicoesHoje = refeicoes;
+            _resumoDia = _calcularResumoDia();
+          });
+          return refeicoes;
+        })
+        .catchError((error) {
+          // Tratar erro, talvez mostrar um SnackBar
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Erro ao carregar refeições: $error'),
+              backgroundColor: AppColors.error,
+            ),
+          );
+          setState(() {
+            _refeicoesHoje = [];
+            _resumoDia = {'verde': 0, 'amarelo': 0, 'vermelho': 0, 'total': 0};
+          });
+          return <RefeicaoDoDiaModel>[];
+        });
   }
 
   Map<String, int> _calcularResumoDia() {
@@ -104,7 +112,8 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
 
   String _getStatusDia() {
     if (_resumoDia['total'] == 0) return 'Nenhuma refeição registrada hoje.';
-    final porcentagemVerde = (_resumoDia['verde']! / _resumoDia['total']!) * 100;
+    final porcentagemVerde =
+        (_resumoDia['verde']! / _resumoDia['total']!) * 100;
 
     if (porcentagemVerde >= 70) {
       return 'Excelente! Dia muito saudável 🌟';
@@ -170,7 +179,9 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
                   return Center(
                     child: Text(
                       'Erro ao carregar refeições: ${snapshot.error}',
-                      style: textTheme.bodyLarge?.copyWith(color: AppColors.error),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: AppColors.error,
+                      ),
                     ),
                   );
                 } else if (snapshot.hasData && snapshot.data!.isEmpty) {
@@ -178,7 +189,9 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
                   return Center(
                     child: Text(
                       'Nenhuma refeição registrada para esta data.',
-                      style: textTheme.bodyLarge?.copyWith(color: AppColors.textSecondary),
+                      style: textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
                   );
                 } else if (snapshot.hasData) {
@@ -208,9 +221,10 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
   }
 
   Widget _buildResumoDia(TextTheme textTheme, DateTime selectedDate) {
-    final porcentagemVerde = _resumoDia['total']! > 0
-        ? (_resumoDia['verde']! / _resumoDia['total']!) * 100
-        : 0.0;
+    final porcentagemVerde =
+        _resumoDia['total']! > 0
+            ? (_resumoDia['verde']! / _resumoDia['total']!) * 100
+            : 0.0;
 
     return DicumeElegantCard(
       child: Column(
@@ -382,7 +396,10 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
     );
   }
 
-  Widget _buildListaRefeicoes(TextTheme textTheme, List<RefeicaoDoDiaModel> refeicoes) {
+  Widget _buildListaRefeicoes(
+    TextTheme textTheme,
+    List<RefeicaoDoDiaModel> refeicoes,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -395,17 +412,12 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
         ),
         const SizedBox(height: 16),
 
-        ...refeicoes.map(
-          (refeicao) => _buildCardRefeicao(refeicao, textTheme),
-        ),
+        ...refeicoes.map((refeicao) => _buildCardRefeicao(refeicao, textTheme)),
       ],
     );
   }
 
-  Widget _buildCardRefeicao(
-    RefeicaoDoDiaModel refeicao,
-    TextTheme textTheme,
-  ) {
+  Widget _buildCardRefeicao(RefeicaoDoDiaModel refeicao, TextTheme textTheme) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: DicumeElegantCard(
@@ -418,7 +430,9 @@ class _MeuDiaScreenState extends ConsumerState<MeuDiaScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: (refeicao.cor ?? AppColors.grey400).withValues(alpha: 0.15),
+                    color: (refeicao.cor ?? AppColors.grey400).withValues(
+                      alpha: 0.15,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
