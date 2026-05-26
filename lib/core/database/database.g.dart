@@ -260,60 +260,50 @@ class $AlimentosTable extends Alimentos
   Alimento map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Alimento(
-      id:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}id'],
-          )!,
-      nome:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}nome'],
-          )!,
-      categoria:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}categoria'],
-          )!,
-      carboidratos:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}carboidratos'],
-          )!,
-      proteinas:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}proteinas'],
-          )!,
-      gorduras:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}gorduras'],
-          )!,
-      calorias:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}calorias'],
-          )!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      categoria: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}categoria'],
+      )!,
+      carboidratos: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carboidratos'],
+      )!,
+      proteinas: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}proteinas'],
+      )!,
+      gorduras: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}gorduras'],
+      )!,
+      calorias: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calorias'],
+      )!,
       indiceCagemicoGlicemico: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}indice_cagemico_glicemico'],
       ),
-      isFavorito:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_favorito'],
-          )!,
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
-      updatedAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}updated_at'],
-          )!,
+      isFavorito: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_favorito'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
     );
   }
 
@@ -378,10 +368,9 @@ class Alimento extends DataClass implements Insertable<Alimento> {
       proteinas: Value(proteinas),
       gorduras: Value(gorduras),
       calorias: Value(calorias),
-      indiceCagemicoGlicemico:
-          indiceCagemicoGlicemico == null && nullToAbsent
-              ? const Value.absent()
-              : Value(indiceCagemicoGlicemico),
+      indiceCagemicoGlicemico: indiceCagemicoGlicemico == null && nullToAbsent
+          ? const Value.absent()
+          : Value(indiceCagemicoGlicemico),
       isFavorito: Value(isFavorito),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
@@ -449,10 +438,9 @@ class Alimento extends DataClass implements Insertable<Alimento> {
     proteinas: proteinas ?? this.proteinas,
     gorduras: gorduras ?? this.gorduras,
     calorias: calorias ?? this.calorias,
-    indiceCagemicoGlicemico:
-        indiceCagemicoGlicemico.present
-            ? indiceCagemicoGlicemico.value
-            : this.indiceCagemicoGlicemico,
+    indiceCagemicoGlicemico: indiceCagemicoGlicemico.present
+        ? indiceCagemicoGlicemico.value
+        : this.indiceCagemicoGlicemico,
     isFavorito: isFavorito ?? this.isFavorito,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
@@ -462,19 +450,18 @@ class Alimento extends DataClass implements Insertable<Alimento> {
       id: data.id.present ? data.id.value : this.id,
       nome: data.nome.present ? data.nome.value : this.nome,
       categoria: data.categoria.present ? data.categoria.value : this.categoria,
-      carboidratos:
-          data.carboidratos.present
-              ? data.carboidratos.value
-              : this.carboidratos,
+      carboidratos: data.carboidratos.present
+          ? data.carboidratos.value
+          : this.carboidratos,
       proteinas: data.proteinas.present ? data.proteinas.value : this.proteinas,
       gorduras: data.gorduras.present ? data.gorduras.value : this.gorduras,
       calorias: data.calorias.present ? data.calorias.value : this.calorias,
-      indiceCagemicoGlicemico:
-          data.indiceCagemicoGlicemico.present
-              ? data.indiceCagemicoGlicemico.value
-              : this.indiceCagemicoGlicemico,
-      isFavorito:
-          data.isFavorito.present ? data.isFavorito.value : this.isFavorito,
+      indiceCagemicoGlicemico: data.indiceCagemicoGlicemico.present
+          ? data.indiceCagemicoGlicemico.value
+          : this.indiceCagemicoGlicemico,
+      isFavorito: data.isFavorito.present
+          ? data.isFavorito.value
+          : this.isFavorito,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -949,60 +936,50 @@ class $RefeicoesTable extends Refeicoes
   Refeicoe map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return Refeicoe(
-      id:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}id'],
-          )!,
-      nome:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}nome'],
-          )!,
-      tipo:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}tipo'],
-          )!,
-      dataHora:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}data_hora'],
-          )!,
-      totalCarboidratos:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}total_carboidratos'],
-          )!,
-      totalProteinas:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}total_proteinas'],
-          )!,
-      totalGorduras:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}total_gorduras'],
-          )!,
-      totalCalorias:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}total_calorias'],
-          )!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      nome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}nome'],
+      )!,
+      tipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo'],
+      )!,
+      dataHora: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}data_hora'],
+      )!,
+      totalCarboidratos: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_carboidratos'],
+      )!,
+      totalProteinas: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_proteinas'],
+      )!,
+      totalGorduras: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_gorduras'],
+      )!,
+      totalCalorias: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}total_calorias'],
+      )!,
       observacoes: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}observacoes'],
       ),
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
-      updatedAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}updated_at'],
-          )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
     );
   }
 
@@ -1066,10 +1043,9 @@ class Refeicoe extends DataClass implements Insertable<Refeicoe> {
       totalProteinas: Value(totalProteinas),
       totalGorduras: Value(totalGorduras),
       totalCalorias: Value(totalCalorias),
-      observacoes:
-          observacoes == null && nullToAbsent
-              ? const Value.absent()
-              : Value(observacoes),
+      observacoes: observacoes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(observacoes),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1143,24 +1119,21 @@ class Refeicoe extends DataClass implements Insertable<Refeicoe> {
       nome: data.nome.present ? data.nome.value : this.nome,
       tipo: data.tipo.present ? data.tipo.value : this.tipo,
       dataHora: data.dataHora.present ? data.dataHora.value : this.dataHora,
-      totalCarboidratos:
-          data.totalCarboidratos.present
-              ? data.totalCarboidratos.value
-              : this.totalCarboidratos,
-      totalProteinas:
-          data.totalProteinas.present
-              ? data.totalProteinas.value
-              : this.totalProteinas,
-      totalGorduras:
-          data.totalGorduras.present
-              ? data.totalGorduras.value
-              : this.totalGorduras,
-      totalCalorias:
-          data.totalCalorias.present
-              ? data.totalCalorias.value
-              : this.totalCalorias,
-      observacoes:
-          data.observacoes.present ? data.observacoes.value : this.observacoes,
+      totalCarboidratos: data.totalCarboidratos.present
+          ? data.totalCarboidratos.value
+          : this.totalCarboidratos,
+      totalProteinas: data.totalProteinas.present
+          ? data.totalProteinas.value
+          : this.totalProteinas,
+      totalGorduras: data.totalGorduras.present
+          ? data.totalGorduras.value
+          : this.totalGorduras,
+      totalCalorias: data.totalCalorias.present
+          ? data.totalCalorias.value
+          : this.totalCalorias,
+      observacoes: data.observacoes.present
+          ? data.observacoes.value
+          : this.observacoes,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1584,51 +1557,42 @@ class $ItensRefeicaoTable extends ItensRefeicao
   ItensRefeicaoData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ItensRefeicaoData(
-      id:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}id'],
-          )!,
-      refeicaoId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}refeicao_id'],
-          )!,
-      alimentoId:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}alimento_id'],
-          )!,
-      quantidade:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}quantidade'],
-          )!,
-      carboidratos:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}carboidratos'],
-          )!,
-      proteinas:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}proteinas'],
-          )!,
-      gorduras:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}gorduras'],
-          )!,
-      calorias:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.double,
-            data['${effectivePrefix}calorias'],
-          )!,
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      refeicaoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}refeicao_id'],
+      )!,
+      alimentoId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}alimento_id'],
+      )!,
+      quantidade: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}quantidade'],
+      )!,
+      carboidratos: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}carboidratos'],
+      )!,
+      proteinas: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}proteinas'],
+      )!,
+      gorduras: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}gorduras'],
+      )!,
+      calorias: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}calorias'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
     );
   }
 
@@ -1746,16 +1710,18 @@ class ItensRefeicaoData extends DataClass
   ItensRefeicaoData copyWithCompanion(ItensRefeicaoCompanion data) {
     return ItensRefeicaoData(
       id: data.id.present ? data.id.value : this.id,
-      refeicaoId:
-          data.refeicaoId.present ? data.refeicaoId.value : this.refeicaoId,
-      alimentoId:
-          data.alimentoId.present ? data.alimentoId.value : this.alimentoId,
-      quantidade:
-          data.quantidade.present ? data.quantidade.value : this.quantidade,
-      carboidratos:
-          data.carboidratos.present
-              ? data.carboidratos.value
-              : this.carboidratos,
+      refeicaoId: data.refeicaoId.present
+          ? data.refeicaoId.value
+          : this.refeicaoId,
+      alimentoId: data.alimentoId.present
+          ? data.alimentoId.value
+          : this.alimentoId,
+      quantidade: data.quantidade.present
+          ? data.quantidade.value
+          : this.quantidade,
+      carboidratos: data.carboidratos.present
+          ? data.carboidratos.value
+          : this.carboidratos,
       proteinas: data.proteinas.present ? data.proteinas.value : this.proteinas,
       gorduras: data.gorduras.present ? data.gorduras.value : this.gorduras,
       calorias: data.calorias.present ? data.calorias.value : this.calorias,
@@ -2042,26 +2008,22 @@ class $CacheApiTable extends CacheApi
   CacheApiData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return CacheApiData(
-      key:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}key'],
-          )!,
-      data:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}data'],
-          )!,
-      expiresAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}expires_at'],
-          )!,
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data'],
+      )!,
+      expiresAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}expires_at'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
     );
   }
 
@@ -2461,45 +2423,38 @@ class $RefeicoesPendentesTable extends RefeicoesPendentes
   RefeicoesPendente map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return RefeicoesPendente(
-      id:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}id'],
-          )!,
-      tipoRefeicao:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}tipo_refeicao'],
-          )!,
-      dataRefeicao:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}data_refeicao'],
-          )!,
-      itensJson:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.string,
-            data['${effectivePrefix}itens_json'],
-          )!,
-      isSyncing:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.bool,
-            data['${effectivePrefix}is_syncing'],
-          )!,
-      createdAt:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.dateTime,
-            data['${effectivePrefix}created_at'],
-          )!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      tipoRefeicao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tipo_refeicao'],
+      )!,
+      dataRefeicao: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_refeicao'],
+      )!,
+      itensJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}itens_json'],
+      )!,
+      isSyncing: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_syncing'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
       lastSyncAttempt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}last_sync_attempt'],
       ),
-      syncAttempts:
-          attachedDatabase.typeMapping.read(
-            DriftSqlType.int,
-            data['${effectivePrefix}sync_attempts'],
-          )!,
+      syncAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_attempts'],
+      )!,
     );
   }
 
@@ -2553,10 +2508,9 @@ class RefeicoesPendente extends DataClass
       itensJson: Value(itensJson),
       isSyncing: Value(isSyncing),
       createdAt: Value(createdAt),
-      lastSyncAttempt:
-          lastSyncAttempt == null && nullToAbsent
-              ? const Value.absent()
-              : Value(lastSyncAttempt),
+      lastSyncAttempt: lastSyncAttempt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncAttempt),
       syncAttempts: Value(syncAttempts),
     );
   }
@@ -2608,32 +2562,29 @@ class RefeicoesPendente extends DataClass
     itensJson: itensJson ?? this.itensJson,
     isSyncing: isSyncing ?? this.isSyncing,
     createdAt: createdAt ?? this.createdAt,
-    lastSyncAttempt:
-        lastSyncAttempt.present ? lastSyncAttempt.value : this.lastSyncAttempt,
+    lastSyncAttempt: lastSyncAttempt.present
+        ? lastSyncAttempt.value
+        : this.lastSyncAttempt,
     syncAttempts: syncAttempts ?? this.syncAttempts,
   );
   RefeicoesPendente copyWithCompanion(RefeicoesPendentesCompanion data) {
     return RefeicoesPendente(
       id: data.id.present ? data.id.value : this.id,
-      tipoRefeicao:
-          data.tipoRefeicao.present
-              ? data.tipoRefeicao.value
-              : this.tipoRefeicao,
-      dataRefeicao:
-          data.dataRefeicao.present
-              ? data.dataRefeicao.value
-              : this.dataRefeicao,
+      tipoRefeicao: data.tipoRefeicao.present
+          ? data.tipoRefeicao.value
+          : this.tipoRefeicao,
+      dataRefeicao: data.dataRefeicao.present
+          ? data.dataRefeicao.value
+          : this.dataRefeicao,
       itensJson: data.itensJson.present ? data.itensJson.value : this.itensJson,
       isSyncing: data.isSyncing.present ? data.isSyncing.value : this.isSyncing,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      lastSyncAttempt:
-          data.lastSyncAttempt.present
-              ? data.lastSyncAttempt.value
-              : this.lastSyncAttempt,
-      syncAttempts:
-          data.syncAttempts.present
-              ? data.syncAttempts.value
-              : this.syncAttempts,
+      lastSyncAttempt: data.lastSyncAttempt.present
+          ? data.lastSyncAttempt.value
+          : this.lastSyncAttempt,
+      syncAttempts: data.syncAttempts.present
+          ? data.syncAttempts.value
+          : this.syncAttempts,
     );
   }
 
@@ -3124,12 +3075,12 @@ class $$AlimentosTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$AlimentosTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$AlimentosTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$AlimentosTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$AlimentosTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AlimentosTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AlimentosTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -3182,16 +3133,14 @@ class $$AlimentosTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$AlimentosTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AlimentosTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({itensRefeicaoRefs = false}) {
             return PrefetchHooks(
               db: db,
@@ -3210,17 +3159,14 @@ class $$AlimentosTableTableManager
                       currentTable: table,
                       referencedTable: $$AlimentosTableReferences
                           ._itensRefeicaoRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
-                              $$AlimentosTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).itensRefeicaoRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.alimentoId == item.id,
-                          ),
+                      managerFromTypedResult: (p0) =>
+                          $$AlimentosTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).itensRefeicaoRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.alimentoId == item.id),
                       typedResults: items,
                     ),
                 ];
@@ -3553,12 +3499,12 @@ class $$RefeicoesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$RefeicoesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$RefeicoesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$RefeicoesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$RefeicoesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RefeicoesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RefeicoesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -3611,16 +3557,14 @@ class $$RefeicoesTableTableManager
                 createdAt: createdAt,
                 updatedAt: updatedAt,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$RefeicoesTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RefeicoesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({itensRefeicaoRefs = false}) {
             return PrefetchHooks(
               db: db,
@@ -3639,17 +3583,14 @@ class $$RefeicoesTableTableManager
                       currentTable: table,
                       referencedTable: $$RefeicoesTableReferences
                           ._itensRefeicaoRefsTable(db),
-                      managerFromTypedResult:
-                          (p0) =>
-                              $$RefeicoesTableReferences(
-                                db,
-                                table,
-                                p0,
-                              ).itensRefeicaoRefs,
-                      referencedItemsForCurrentItem:
-                          (item, referencedItems) => referencedItems.where(
-                            (e) => e.refeicaoId == item.id,
-                          ),
+                      managerFromTypedResult: (p0) =>
+                          $$RefeicoesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).itensRefeicaoRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.refeicaoId == item.id),
                       typedResults: items,
                     ),
                 ];
@@ -4030,16 +3971,12 @@ class $$ItensRefeicaoTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$ItensRefeicaoTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () =>
-                  $$ItensRefeicaoTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$ItensRefeicaoTableAnnotationComposer(
-                $db: db,
-                $table: table,
-              ),
+          createFilteringComposer: () =>
+              $$ItensRefeicaoTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ItensRefeicaoTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ItensRefeicaoTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -4084,66 +4021,63 @@ class $$ItensRefeicaoTableTableManager
                 calorias: calorias,
                 createdAt: createdAt,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          $$ItensRefeicaoTableReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ItensRefeicaoTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
           prefetchHooksCallback: ({refeicaoId = false, alimentoId = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [],
-              addJoins: <
-                T extends TableManagerState<
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic,
-                  dynamic
-                >
-              >(state) {
-                if (refeicaoId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.refeicaoId,
-                            referencedTable: $$ItensRefeicaoTableReferences
-                                ._refeicaoIdTable(db),
-                            referencedColumn:
-                                $$ItensRefeicaoTableReferences
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (refeicaoId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.refeicaoId,
+                                referencedTable: $$ItensRefeicaoTableReferences
+                                    ._refeicaoIdTable(db),
+                                referencedColumn: $$ItensRefeicaoTableReferences
                                     ._refeicaoIdTable(db)
                                     .id,
-                          )
-                          as T;
-                }
-                if (alimentoId) {
-                  state =
-                      state.withJoin(
-                            currentTable: table,
-                            currentColumn: table.alimentoId,
-                            referencedTable: $$ItensRefeicaoTableReferences
-                                ._alimentoIdTable(db),
-                            referencedColumn:
-                                $$ItensRefeicaoTableReferences
+                              )
+                              as T;
+                    }
+                    if (alimentoId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.alimentoId,
+                                referencedTable: $$ItensRefeicaoTableReferences
+                                    ._alimentoIdTable(db),
+                                referencedColumn: $$ItensRefeicaoTableReferences
                                     ._alimentoIdTable(db)
                                     .id,
-                          )
-                          as T;
-                }
+                              )
+                              as T;
+                    }
 
-                return state;
-              },
+                    return state;
+                  },
               getPrefetchedDataCallback: (items) async {
                 return [];
               },
@@ -4289,12 +4223,12 @@ class $$CacheApiTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$CacheApiTableFilterComposer($db: db, $table: table),
-          createOrderingComposer:
-              () => $$CacheApiTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer:
-              () => $$CacheApiTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$CacheApiTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CacheApiTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CacheApiTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> key = const Value.absent(),
@@ -4323,16 +4257,9 @@ class $$CacheApiTableTableManager
                 createdAt: createdAt,
                 rowid: rowid,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -4549,18 +4476,12 @@ class $$RefeicoesPendentesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer:
-              () => $$RefeicoesPendentesTableFilterComposer(
-                $db: db,
-                $table: table,
-              ),
-          createOrderingComposer:
-              () => $$RefeicoesPendentesTableOrderingComposer(
-                $db: db,
-                $table: table,
-              ),
-          createComputedFieldComposer:
-              () => $$RefeicoesPendentesTableAnnotationComposer(
+          createFilteringComposer: () =>
+              $$RefeicoesPendentesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RefeicoesPendentesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RefeicoesPendentesTableAnnotationComposer(
                 $db: db,
                 $table: table,
               ),
@@ -4604,16 +4525,9 @@ class $$RefeicoesPendentesTableTableManager
                 lastSyncAttempt: lastSyncAttempt,
                 syncAttempts: syncAttempts,
               ),
-          withReferenceMapper:
-              (p0) =>
-                  p0
-                      .map(
-                        (e) => (
-                          e.readTable(table),
-                          BaseReferences(db, table, e),
-                        ),
-                      )
-                      .toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );

@@ -42,10 +42,7 @@ class AuthRepositoryImpl implements AuthRepository {
       }
 
       // Tenta fazer login com Google
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
-      if (googleUser == null) {
-        return const Left(GoogleSignInCancelledFailure());
-      }
+      final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
 
       // Obtém o token de autenticação do Google
       final GoogleSignInAuthentication googleAuth =
@@ -72,8 +69,7 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      // Usa idToken preferencialmente (ideal para API backend), fallback para accessToken
-      final String? googleToken = googleAuth.idToken ?? googleAuth.accessToken;
+      final String? googleToken = googleAuth.idToken;
 
       if (googleToken == null) {
         return const Left(
@@ -108,10 +104,13 @@ class AuthRepositoryImpl implements AuthRepository {
       return Right(user);
     } on DioException catch (e) {
       return Left(_handleDioException(e));
-    } catch (e) {
-      if (e.toString().contains('sign_in_canceled')) {
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled ||
+          e.code == GoogleSignInExceptionCode.interrupted) {
         return const Left(GoogleSignInCancelledFailure());
       }
+      return Left(GoogleSignInFailure(e.toString()));
+    } catch (e) {
       return Left(GoogleSignInFailure(e.toString()));
     }
   }
@@ -326,18 +325,14 @@ class AuthRepositoryImpl implements AuthRepository {
           'email': googleUser.email,
           'displayName': googleUser.displayName,
           'photoUrl': googleUser.photoUrl,
-          'serverAuthCode': googleUser.serverAuthCode,
         },
         'authentication': {
-          'hasAccessToken': googleAuth.accessToken != null,
           'hasIdToken': googleAuth.idToken != null,
-          'tokenUsedForAPI': googleAuth.idToken ?? googleAuth.accessToken,
-          'tokenType': googleAuth.idToken != null ? 'ID_TOKEN' : 'ACCESS_TOKEN',
+          'tokenUsedForAPI': googleAuth.idToken,
         },
         'timestamp': DateTime.now().toIso8601String(),
         'debugInfo': {
           'idTokenLength': googleAuth.idToken?.length ?? 0,
-          'accessTokenLength': googleAuth.accessToken?.length ?? 0,
         },
       };
 

@@ -55,13 +55,13 @@ final dioProvider = Provider<Dio>((ref) {
 });
 
 final googleSignInProvider = Provider<GoogleSignIn>((ref) {
-  return GoogleSignIn(scopes: ['email', 'profile']);
+  return GoogleSignIn.instance;
 });
 
 final secureStorageProvider = Provider<FlutterSecureStorage>((ref) {
   return const FlutterSecureStorage(
     aOptions: AndroidOptions(
-      sharedPreferencesName: 'dicume_secure_prefs',
+      storageNamespace: 'dicume_secure_prefs',
       preferencesKeyPrefix: 'dicume_',
     ),
     iOptions: IOSOptions(

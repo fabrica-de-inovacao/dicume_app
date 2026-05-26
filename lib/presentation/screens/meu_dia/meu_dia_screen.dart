@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/dicume_elegant_components.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../../core/services/feedback_service.dart';
 import '../../../core/services/api_service.dart';
 import '../../../data/models/refeicao_do_dia_model.dart';

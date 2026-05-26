@@ -3,7 +3,7 @@ import '../../domain/entities/user.dart';
 
 part 'user_model.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createFactory: false)
 class UserModel {
   final String id;
   final String nome;

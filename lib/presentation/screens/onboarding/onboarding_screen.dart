@@ -17,51 +17,53 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentIndex = 0;
+  bool _isLoggedIn = false;
+
+  static const List<IconData> _pageIcons = [
+    Icons.celebration_rounded,
+    Icons.restaurant_menu_rounded,
+    Icons.trending_up_rounded,
+    Icons.track_changes_rounded,
+    Icons.login_rounded,
+    Icons.rocket_launch_rounded,
+  ];
+
   final List<OnboardingPage> _pages = [
     OnboardingPage(
       title: 'Bem-vindo ao DICUMÊ!',
       subtitle: 'Seu companheiro para uma alimentação mais saudável',
       description:
           'Descubra como tornar suas refeições mais equilibradas com nosso semáforo nutricional regionalizado.',
-      imagePath: 'assets/images/onboarding_welcome.png',
-      animation: 'assets/lottie/celebration.json',
     ),
     OnboardingPage(
       title: 'Monte Pratos Inteligentes',
       subtitle: 'Cada alimento tem sua cor no semáforo',
       description:
           'Verde para consumir à vontade, amarelo com moderação e vermelho apenas ocasionalmente.',
-      imagePath: 'assets/images/onboarding_plate.png',
-      animation: 'assets/lottie/cooking.json',
     ),
     OnboardingPage(
       title: 'Acompanhe seu Progresso',
       subtitle: 'Visualize seu dia alimentar',
       description:
           'Registre suas refeições e veja como está seu equilíbrio nutricional ao longo do dia.',
-      imagePath: 'assets/images/onboarding_progress.png',
-      animation: 'assets/lottie/plate_empty.json',
     ),
     OnboardingPage(
       title: 'Qual sua meta?',
       subtitle: 'Defina um objetivo simples',
       description:
           'Escreva uma meta curta que descreva seu objetivo com o app (ex: controlar carboidratos, reduzir peso, manter glicemia estável).',
-      imagePath: 'assets/images/onboarding_goal.png',
     ),
     OnboardingPage(
       title: 'Faça login para salvar',
       subtitle: 'Salve seu progresso',
       description:
           'Faça login para salvar sua meta e sincronizar seu progresso entre dispositivos. Você pode pular se preferir salvar apenas localmente.',
-      imagePath: 'assets/images/onboarding_login.png',
     ),
     OnboardingPage(
       title: 'Vamos Começar!',
       subtitle: 'Preparando seu ambiente personalizado',
       description:
           'Estamos configurando tudo para você ter a melhor experiência possível.',
-      imagePath: 'assets/images/onboarding_start.png',
       isLastPage: true,
     ),
   ];
@@ -236,117 +238,149 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   }
 
   Widget _buildPage(OnboardingPage page, TextTheme textTheme) {
+    final icon = _pageIcons[_pages.indexOf(page)];
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.symmetric(horizontal: 28),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
 
-          // Imagem ou animação
+          // Ícone principal estilizado
           Container(
-            height: 250,
+            height: 220,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: AppColors.primaryLight.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.primary.withValues(alpha: 0.08),
+                  AppColors.primaryLight.withValues(alpha: 0.15),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(28),
             ),
-            child:
-                page.animation != null
-                    ? Container(
-                      width: 200,
-                      height: 200,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Icon(
-                        Icons.restaurant_menu,
-                        size: 80,
-                        color: AppColors.primary,
-                      ),
-                    )
-                    : page.imagePath != null
-                    ? ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.asset(
-                        page.imagePath!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(
-                            Icons.image_not_supported,
-                            size: 100,
-                            color: AppColors.grey300,
-                          );
-                        },
-                      ),
-                    )
-                    : Icon(
-                      Icons.restaurant_menu,
-                      size: 100,
-                      color: AppColors.primary,
-                    ),
+            child: Center(
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 56, color: AppColors.primary),
+              ),
+            ),
           ),
 
-          const SizedBox(height: 40),
+          const SizedBox(height: 36),
 
           // Título
-          Text(
-            page.title,
-            textAlign: TextAlign.center,
-            style: textTheme.headlineMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.bold,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              page.title,
+              textAlign: TextAlign.center,
+              style: textTheme.headlineMedium?.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+                height: 1.2,
+              ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
 
           // Subtítulo
-          Text(
-            page.subtitle,
-            textAlign: TextAlign.center,
-            style: textTheme.titleMedium?.copyWith(
-              color: AppColors.primary,
-              fontWeight: FontWeight.w600,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              page.subtitle,
+              textAlign: TextAlign.center,
+              style: textTheme.titleMedium?.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
+
           // Descrição
-          Text(
-            page.description,
-            textAlign: TextAlign.center,
-            style: textTheme.bodyLarge?.copyWith(
-              color: AppColors.textSecondary,
-              height: 1.5,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              page.description,
+              textAlign: TextAlign.center,
+              style: textTheme.bodyLarge?.copyWith(
+                color: AppColors.textSecondary,
+                height: 1.6,
+              ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
           // Se for a página de login, renderizar botão para abrir modal de autenticação
           if (page.title == 'Faça login para salvar') ...[
             const SizedBox(height: 8),
-            SizedBox(
-              width: double.infinity,
-              child: DicumeElegantButton(
-                text: 'Fazer login',
-                onPressed: () async {
-                  FeedbackService().lightTap();
-                  await showAuthModal(context);
-                },
-                isSmall: false,
-                icon: Icons.login,
+            if (_isLoggedIn)
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.success.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle, color: AppColors.success),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Login realizado com sucesso!',
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              SizedBox(
+                width: double.infinity,
+                child: DicumeElegantButton(
+                  text: 'Fazer login',
+                  onPressed: () async {
+                    FeedbackService().lightTap();
+                    final loggedIn = await showAuthModal(context);
+                    if (loggedIn && mounted) {
+                      setState(() => _isLoggedIn = true);
+                      await FeedbackService().successFeedback();
+                      await Future.delayed(
+                        const Duration(milliseconds: 1200),
+                      );
+                      if (mounted) _nextPage();
+                    }
+                  },
+                  isSmall: false,
+                  icon: Icons.login,
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {
-                _skipPage();
-              },
-              child: const Text('Pular'),
-            ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed: _skipPage,
+                child: const Text('Pular, depois faço login'),
+              ),
+            ],
           ] else
           // Se for a página de meta, renderizar campo de entrada e botões
           if (page.title == 'Qual sua meta?') ...[
@@ -494,16 +528,12 @@ class OnboardingPage {
   final String title;
   final String subtitle;
   final String description;
-  final String? imagePath;
-  final String? animation;
   final bool isLastPage;
 
-  OnboardingPage({
+  const OnboardingPage({
     required this.title,
     required this.subtitle,
     required this.description,
-    this.imagePath,
-    this.animation,
     this.isLastPage = false,
   });
 }

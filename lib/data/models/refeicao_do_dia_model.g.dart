@@ -11,13 +11,11 @@ RefeicaoDoDiaModel _$RefeicaoDoDiaModelFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       tipoRefeicao: json['tipo_refeicao'] as String,
       classificacaoFinal: json['classificacao_final'] as String,
-      itens:
-          (json['itens'] as List<dynamic>)
-              .map(
-                (e) =>
-                    ItemRefeicaoDoDiaModel.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      itens: (json['itens'] as List<dynamic>)
+          .map(
+            (e) => ItemRefeicaoDoDiaModel.fromJson(e as Map<String, dynamic>),
+          )
+          .toList(),
     );
 
 Map<String, dynamic> _$RefeicaoDoDiaModelToJson(RefeicaoDoDiaModel instance) =>

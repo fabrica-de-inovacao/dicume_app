@@ -12,12 +12,9 @@ PerfilStatusModel _$PerfilStatusModelFromJson(Map<String, dynamic> json) =>
       userId: json['usuario_id'] as String,
       totalRefeicoes: (json['total_refeicoes'] as num).toInt(),
       diasConsecutivos: (json['dias_consecutivos'] as num).toInt(),
-      ultimasRefeicoes:
-          (json['ultimas_refeicoes'] as List<dynamic>)
-              .map(
-                (e) => UltimaRefeicaoModel.fromJson(e as Map<String, dynamic>),
-              )
-              .toList(),
+      ultimasRefeicoes: (json['ultimas_refeicoes'] as List<dynamic>)
+          .map((e) => UltimaRefeicaoModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$PerfilStatusModelToJson(PerfilStatusModel instance) =>

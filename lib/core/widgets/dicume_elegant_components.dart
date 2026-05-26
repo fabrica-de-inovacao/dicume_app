@@ -259,32 +259,38 @@ class DicumeElegantButton extends StatelessWidget {
             vertical: isSmall ? 8 : 12,
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (isLoading) ...[
-              SizedBox(
-                width: isSmall ? 14 : 16,
-                height: isSmall ? 14 : 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isLoading) ...[
+                SizedBox(
+                  width: isSmall ? 14 : 16,
+                  height: isSmall ? 14 : 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+                  ),
+                ),
+                SizedBox(width: isSmall ? 6 : 8),
+              ] else if (icon != null) ...[
+                Icon(icon, size: isSmall ? 16 : 20),
+                SizedBox(width: isSmall ? 6 : 8),
+              ],
+              Text(
+                text,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: isSmall ? 14 : 16,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.25,
                 ),
               ),
-              SizedBox(width: isSmall ? 6 : 8),
-            ] else if (icon != null) ...[
-              Icon(icon, size: isSmall ? 16 : 20),
-              SizedBox(width: isSmall ? 6 : 8),
             ],
-            Text(
-              text,
-              style: TextStyle(
-                fontSize: isSmall ? 14 : 16,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.25,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

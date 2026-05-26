@@ -6,20 +6,6 @@ part of 'user_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-UserModel _$UserModelFromJson(Map<String, dynamic> json) => UserModel(
-  id: json['id'] as String,
-  nome: json['nome'] as String,
-  email: json['email'] as String,
-  telefone: json['telefone'] as String?,
-  avatarUrl: json['avatarUrl'] as String?,
-  createdAt: json['created_at'] as String,
-  updatedAt: json['updated_at'] as String,
-  isFirstLogin: json['is_first_login'] as bool? ?? true,
-  preferences: UserPreferencesModel.fromJson(
-    json['preferences'] as Map<String, dynamic>,
-  ),
-);
-
 Map<String, dynamic> _$UserModelToJson(UserModel instance) => <String, dynamic>{
   'id': instance.id,
   'nome': instance.nome,

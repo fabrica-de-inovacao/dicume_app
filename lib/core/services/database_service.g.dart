@@ -6,39 +6,88 @@ part of 'database_service.dart';
 // RiverpodGenerator
 // **************************************************************************
 
+// GENERATED CODE - DO NOT MODIFY BY HAND
+// ignore_for_file: type=lint, type=warning
+
+@ProviderFor(database)
+final databaseProvider = DatabaseProvider._();
+
+final class DatabaseProvider
+    extends $FunctionalProvider<AppDatabase, AppDatabase, AppDatabase>
+    with $Provider<AppDatabase> {
+  DatabaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'databaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$databaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<AppDatabase> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  AppDatabase create(Ref ref) {
+    return database(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AppDatabase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AppDatabase>(value),
+    );
+  }
+}
+
 String _$databaseHash() => r'e5a1fa0e8ff9aa131f847f28519ec2098e6d0f76';
 
-/// See also [database].
-@ProviderFor(database)
-final databaseProvider = Provider<AppDatabase>.internal(
-  database,
-  name: r'databaseProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product') ? null : _$databaseHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
-
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DatabaseRef = ProviderRef<AppDatabase>;
-String _$databaseServiceHash() => r'545580cf6881658bbe944bafc32eabf47c03919a';
-
-/// See also [databaseService].
 @ProviderFor(databaseService)
-final databaseServiceProvider = AutoDisposeProvider<DatabaseService>.internal(
-  databaseService,
-  name: r'databaseServiceProvider',
-  debugGetCreateSourceHash:
-      const bool.fromEnvironment('dart.vm.product')
-          ? null
-          : _$databaseServiceHash,
-  dependencies: null,
-  allTransitiveDependencies: null,
-);
+final databaseServiceProvider = DatabaseServiceProvider._();
 
-@Deprecated('Will be removed in 3.0. Use Ref instead')
-// ignore: unused_element
-typedef DatabaseServiceRef = AutoDisposeProviderRef<DatabaseService>;
-// ignore_for_file: type=lint
-// ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package
+final class DatabaseServiceProvider
+    extends
+        $FunctionalProvider<DatabaseService, DatabaseService, DatabaseService>
+    with $Provider<DatabaseService> {
+  DatabaseServiceProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'databaseServiceProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$databaseServiceHash();
+
+  @$internal
+  @override
+  $ProviderElement<DatabaseService> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  DatabaseService create(Ref ref) {
+    return databaseService(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DatabaseService value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DatabaseService>(value),
+    );
+  }
+}
+
+String _$databaseServiceHash() => r'545580cf6881658bbe944bafc32eabf47c03919a';

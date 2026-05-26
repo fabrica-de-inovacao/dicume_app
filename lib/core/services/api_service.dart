@@ -361,6 +361,13 @@ class ApiService {
 
       return refeicoes;
     } on AppException catch (e) {
+      // 404 significa "nenhuma refeição cadastrada" — é um estado vazio, não erro
+      if (e.type == AppExceptionType.notFound) {
+        debugPrint(
+          '🍽️ [REFEICAO] Nenhuma refeição encontrada para $data (válido)',
+        );
+        return [];
+      }
       debugPrint(
         '🍽️ [REFEICAO] ❌ AppException ao buscar refeições: ${e.message} (${e.type})',
       );

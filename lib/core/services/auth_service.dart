@@ -11,14 +11,19 @@ class AuthService {
   factory AuthService() => _instance;
   AuthService._internal();
 
-  // Secure Storage para tokens
+  // Secure Storage para tokens (mesma config do auth_providers.dart)
   static const _storage = FlutterSecureStorage(
-    aOptions: AndroidOptions(),
-    iOptions: IOSOptions(synchronizable: false),
+    aOptions: AndroidOptions(
+      storageNamespace: 'dicume_secure_prefs',
+      preferencesKeyPrefix: 'dicume_',
+    ),
+    iOptions: IOSOptions(
+      synchronizable: false,
+      groupId: 'group.br.app.dicume',
+      accountName: 'dicume_account',
+    ),
   );
 
-  // Google Sign In
-  late final GoogleSignIn _googleSignIn;
   bool _isInitialized = false;
 
   // Keys para storage
@@ -26,18 +31,13 @@ class AuthService {
   static const String _userKey = 'dicume_user_data';
   static const String _isFirstLaunchKey = 'dicume_first_launch';
 
-  void initialize() {
+  Future<void> initialize() async {
     if (_isInitialized) {
       debugPrint('🔑 [AUTH] AuthService já foi inicializado, pulando...');
       return;
     }
 
-    _googleSignIn = GoogleSignIn(
-      // Configurações do Google Sign-In
-      scopes: ['email', 'profile'],
-      // 🔑 SERVERCLIENTID é OBRIGATÓRIO para obter idToken
-      // Este deve ser o WEB CLIENT ID (não o Android Client ID)
-      // Usando o Web Client ID correto do Google Cloud Console:
+    await GoogleSignIn.instance.initialize(
       serverClientId:
           '1096626549217-05u9n9naj1lt584b703eet41vffn96bv.apps.googleusercontent.com',
     );
@@ -134,22 +134,11 @@ class AuthService {
 
       // Fazer logout primeiro para forçar seleção de conta
       debugPrint('🔐 [AUTH] Fazendo logout do Google Sign-In...');
-      await _googleSignIn.signOut();
+      await GoogleSignIn.instance.signOut();
       debugPrint('🔐 [AUTH] Logout do Google Sign-In concluído');
 
-      debugPrint('🔐 [AUTH] Chamando _googleSignIn.signIn()...');
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      debugPrint(
-        '🔐 [AUTH] Resultado do signIn: ${googleUser != null ? 'SUCCESS' : 'NULL'}',
-      );
-
-      if (googleUser == null) {
-        debugPrint('🔐 [AUTH] ❌ Login cancelado pelo usuário');
-        return GoogleSignInResult(
-          success: false,
-          message: 'Login cancelado pelo usuário',
-        );
-      }
+      debugPrint('🔐 [AUTH] Chamando GoogleSignIn.instance.authenticate()...');
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
       debugPrint('🔐 [AUTH] ✅ GoogleUser obtido: ${googleUser.email}');
 
@@ -159,9 +148,6 @@ class AuthService {
       debugPrint('📋 [GOOGLE_USER] email: ${googleUser.email}');
       debugPrint('📋 [GOOGLE_USER] id: ${googleUser.id}');
       debugPrint('📋 [GOOGLE_USER] photoUrl: ${googleUser.photoUrl}');
-      debugPrint(
-        '📋 [GOOGLE_USER] serverAuthCode: ${googleUser.serverAuthCode}',
-      );
       debugPrint('📋 [GOOGLE_USER] toString(): ${googleUser.toString()}');
       debugPrint('📋 [GOOGLE_USER] ========================================');
 
@@ -195,11 +181,7 @@ class AuthService {
       debugPrint(
         '📋 [GOOGLE_AUTH] ========== DADOS DE AUTENTICAÇÃO ==========',
       );
-      debugPrint('� [GOOGLE_AUTH] accessToken: ${googleAuth.accessToken}');
       debugPrint('📋 [GOOGLE_AUTH] idToken: ${googleAuth.idToken}');
-      debugPrint(
-        '📋 [GOOGLE_AUTH] accessToken length: ${googleAuth.accessToken?.length ?? 0}',
-      );
       debugPrint(
         '📋 [GOOGLE_AUTH] idToken length: ${googleAuth.idToken?.length ?? 0}',
       );
@@ -208,10 +190,7 @@ class AuthService {
         '📋 [GOOGLE_AUTH] =============================================',
       );
 
-      debugPrint('�🔐 [AUTH] GoogleAuth obtido');
-      debugPrint(
-        '🔐 [AUTH] accessToken exists: ${googleAuth.accessToken != null}',
-      );
+      debugPrint('🔐 [AUTH] GoogleAuth obtido');
       debugPrint('🔐 [AUTH] idToken exists: ${googleAuth.idToken != null}');
 
       if (googleAuth.idToken != null) {
@@ -246,21 +225,7 @@ class AuthService {
         }
       }
 
-      // 🔍 VERIFICAR QUAL TOKEN USAR PARA A API
-      String? tokenForApi;
-      String tokenType;
-
-      if (googleAuth.idToken != null) {
-        tokenForApi = googleAuth.idToken!;
-        tokenType = 'ID_TOKEN';
-        debugPrint(
-          '🎯 [TOKEN] ✅ ID TOKEN disponível - IDEAL para API backend!',
-        );
-      } else if (googleAuth.accessToken != null) {
-        tokenForApi = googleAuth.accessToken!;
-        tokenType = 'ACCESS_TOKEN';
-        debugPrint('⚠️ [TOKEN] Usando ACCESS TOKEN (idToken não disponível)');
-      } else {
+      if (googleAuth.idToken == null) {
         debugPrint('❌ [TOKEN] Nenhum token disponível!');
         return GoogleSignInResult(
           success: false,
@@ -270,31 +235,21 @@ class AuthService {
 
       debugPrint('🔐 [AUTH] ✅ Login com Google bem-sucedido!');
 
-      // 🔍 PREPARAR DADOS COMPLETOS PARA API
       Map<String, dynamic> completeUserInfo = {
         'id': googleUser.id,
         'name': googleUser.displayName ?? '',
         'email': googleUser.email,
         'photoUrl': googleUser.photoUrl,
-        'serverAuthCode': googleUser.serverAuthCode,
       };
 
       debugPrint('📋 [API_DATA] ========== DADOS PARA API ==========');
       debugPrint('📋 [API_DATA] completeUserInfo: $completeUserInfo');
-      debugPrint('📋 [API_DATA] tokenType: $tokenType');
-      debugPrint('📋 [API_DATA] tokenForApi length: ${tokenForApi.length}');
-      debugPrint(
-        '📋 [API_DATA] accessToken: ${googleAuth.accessToken != null ? "Disponível" : "NULL"}',
-      );
-      debugPrint(
-        '📋 [API_DATA] idToken: ${googleAuth.idToken != null ? "Disponível" : "NULL"}',
-      );
+      debugPrint('📋 [API_DATA] tokenForApi length: ${googleAuth.idToken!.length}');
       debugPrint('📋 [API_DATA] =======================================');
 
       return GoogleSignInResult(
         success: true,
-        googleToken: tokenForApi, // Token principal (preferencialmente idToken)
-        accessToken: googleAuth.accessToken,
+        googleToken: googleAuth.idToken!,
         userInfo: completeUserInfo,
       );
     } catch (e) {
@@ -315,7 +270,7 @@ class AuthService {
       await _storage.delete(key: _userKey);
 
       // Logout do Google
-      await _googleSignIn.signOut();
+      await GoogleSignIn.instance.signOut();
 
       debugPrint('Logout realizado com sucesso');
     } catch (e) {
@@ -327,7 +282,7 @@ class AuthService {
   Future<void> clearAllData() async {
     try {
       await _storage.deleteAll();
-      await _googleSignIn.signOut();
+      await GoogleSignIn.instance.signOut();
       debugPrint('Todos os dados limpos');
     } catch (e) {
       debugPrint('Erro ao limpar dados: $e');
@@ -348,16 +303,13 @@ class AuthService {
 // Classe para resultado do Google Sign-In
 class GoogleSignInResult {
   final bool success;
-  final String?
-  googleToken; // Token principal (accessToken quando sem serverClientId)
-  final String? accessToken; // Access Token específico
+  final String? googleToken;
   final Map<String, dynamic>? userInfo;
   final String? message;
 
   GoogleSignInResult({
     required this.success,
     this.googleToken,
-    this.accessToken,
     this.userInfo,
     this.message,
   });

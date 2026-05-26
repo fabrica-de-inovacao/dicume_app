@@ -12,13 +12,9 @@ RefeicaoPendenteModel _$RefeicaoPendenteModelFromJson(
   id: (json['id'] as num?)?.toInt(),
   tipoRefeicao: json['tipo_refeicao'] as String,
   dataRefeicao: json['data_refeicao'] as String,
-  itens:
-      (json['itens'] as List<dynamic>)
-          .map(
-            (e) =>
-                ItemRefeicaoPendenteModel.fromJson(e as Map<String, dynamic>),
-          )
-          .toList(),
+  itens: (json['itens'] as List<dynamic>)
+      .map((e) => ItemRefeicaoPendenteModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
   createdAt: json['created_at'] as String,
   isSyncing: json['is_syncing'] as bool? ?? false,
 );
@@ -53,10 +49,9 @@ RefeicaoApiRequestModel _$RefeicaoApiRequestModelFromJson(
 ) => RefeicaoApiRequestModel(
   tipoRefeicao: json['tipo_refeicao'] as String,
   dataRefeicao: json['data_refeicao'] as String,
-  itens:
-      (json['itens'] as List<dynamic>)
-          .map((e) => ItemRefeicaoApiModel.fromJson(e as Map<String, dynamic>))
-          .toList(),
+  itens: (json['itens'] as List<dynamic>)
+      .map((e) => ItemRefeicaoApiModel.fromJson(e as Map<String, dynamic>))
+      .toList(),
 );
 
 Map<String, dynamic> _$RefeicaoApiRequestModelToJson(

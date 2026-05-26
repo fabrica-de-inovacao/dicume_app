@@ -5,6 +5,7 @@ import '../../../core/services/feedback_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/services/api_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart';
 import '../../controllers/auth_controller.dart';
 
 // Provider local para controlar estado de carregamento do modal
@@ -79,12 +80,8 @@ class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
 
       debugPrint('[AUTH_MODAL] Passo 3: Login realizado com sucesso!');
 
-      // 3. Login realizado com sucesso
-      await FeedbackService().strongTap();
+      await FeedbackService().successFeedback();
       debugPrint('[AUTH_MODAL] Passo 3: Login realizado com sucesso!');
-
-      // 3. Login realizado com sucesso
-      await FeedbackService().strongTap();
 
       if (mounted) {
         debugPrint(
@@ -264,8 +261,8 @@ class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
               _method == _AuthMethod.google
                   ? 'Use sua conta Google para entrar rapidamente.'
                   : (_isSignup
-                      ? 'Crie uma conta para salvar seus pratos e acompanhar seu progresso.'
-                      : 'Entre com seu email e senha para acessar sua conta.'),
+                        ? 'Crie uma conta para salvar seus pratos e acompanhar seu progresso.'
+                        : 'Entre com seu email e senha para acessar sua conta.'),
               textAlign: TextAlign.center,
               style: textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
@@ -281,22 +278,20 @@ class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
                 ChoiceChip(
                   label: const Text('Google'),
                   selected: _method == _AuthMethod.google,
-                  onSelected:
-                      (_) => setState(() {
-                        _method = _AuthMethod.google;
-                        _isSignup = false;
-                        _errorMessage = null;
-                      }),
+                  onSelected: (_) => setState(() {
+                    _method = _AuthMethod.google;
+                    _isSignup = false;
+                    _errorMessage = null;
+                  }),
                 ),
                 const SizedBox(width: 8),
                 ChoiceChip(
                   label: const Text('Conta (email)'),
                   selected: _method == _AuthMethod.email,
-                  onSelected:
-                      (_) => setState(() {
-                        _method = _AuthMethod.email;
-                        _errorMessage = null;
-                      }),
+                  onSelected: (_) => setState(() {
+                    _method = _AuthMethod.email;
+                    _errorMessage = null;
+                  }),
                 ),
               ],
             ),
@@ -371,11 +366,10 @@ class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
               const SizedBox(height: 12),
               // Link para entrar com email caso queira
               TextButton(
-                onPressed:
-                    () => setState(() {
-                      _method = _AuthMethod.email;
-                      _isSignup = false;
-                    }),
+                onPressed: () => setState(() {
+                  _method = _AuthMethod.email;
+                  _isSignup = false;
+                }),
                 child: const Text('Ou prefere entrar com email e senha?'),
               ),
             ] else ...[
@@ -383,25 +377,22 @@ class _AuthModalScreenState extends ConsumerState<AuthModalScreen> {
               SizedBox(
                 width: double.infinity,
                 child: DicumeElegantButton(
-                  onPressed:
-                      isLoading
-                          ? null
-                          : (_isSignup ? _signupWithEmail : _signinWithEmail),
-                  text:
-                      isLoading
-                          ? (_isSignup ? 'Criando conta...' : 'Entrando...')
-                          : (_isSignup ? 'Criar Conta' : 'Entrar'),
+                  onPressed: isLoading
+                      ? null
+                      : (_isSignup ? _signupWithEmail : _signinWithEmail),
+                  text: isLoading
+                      ? (_isSignup ? 'Criando conta...' : 'Entrando...')
+                      : (_isSignup ? 'Criar Conta' : 'Entrar'),
                   isLoading: isLoading,
                 ),
               ),
               const SizedBox(height: 8),
               // Toggle link between signup/signin
               TextButton(
-                onPressed:
-                    () => setState(() {
-                      _isSignup = !_isSignup;
-                      _errorMessage = null;
-                    }),
+                onPressed: () => setState(() {
+                  _isSignup = !_isSignup;
+                  _errorMessage = null;
+                }),
                 child: Text(
                   _isSignup
                       ? 'Já possui conta? Entrar'

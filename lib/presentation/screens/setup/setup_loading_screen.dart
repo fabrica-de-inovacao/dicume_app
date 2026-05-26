@@ -129,28 +129,35 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
 
-              // Animação de loading
+              // Animação de loading com gradiente
               AnimatedBuilder(
                 animation: _pulseAnimation,
                 builder: (context, child) {
                   return Transform.scale(
                     scale: _pulseAnimation.value,
                     child: Container(
-                      width: 100,
-                      height: 100,
+                      width: 110,
+                      height: 110,
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppColors.primary.withValues(alpha: 0.1),
+                            AppColors.primaryLight.withValues(alpha: 0.2),
+                          ],
+                        ),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
-                        Icons.restaurant_menu,
-                        size: 48,
+                        Icons.restaurant_menu_rounded,
+                        size: 52,
                         color: AppColors.primary,
                       ),
                     ),
@@ -158,7 +165,7 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
                 },
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 44),
 
               // Título
               Text(
@@ -170,7 +177,7 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
                 textAlign: TextAlign.center,
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
 
               // Descrição do passo atual
               if (!_hasError) ...[
@@ -178,27 +185,33 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
                   _currentStep,
                   style: textTheme.bodyLarge?.copyWith(
                     color: AppColors.textSecondary,
+                    height: 1.4,
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                const SizedBox(height: 32),
+                const SizedBox(height: 36),
 
                 // Barra de progresso
                 Container(
                   width: double.infinity,
-                  height: 6,
+                  height: 8,
                   decoration: BoxDecoration(
                     color: AppColors.grey200,
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                   child: FractionallySizedBox(
                     alignment: Alignment.centerLeft,
                     widthFactor: _progress,
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(3),
+                        gradient: LinearGradient(
+                          colors: [
+                            AppColors.primary,
+                            AppColors.primaryLight,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(4),
                       ),
                     ),
                   ),
@@ -210,8 +223,8 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
                 Text(
                   '${(_progress * 100).toInt()}%',
                   style: textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
@@ -219,20 +232,20 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
               // Mensagem de erro
               if (_hasError) ...[
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.error.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppColors.error.withValues(alpha: 0.3),
+                      color: AppColors.error.withValues(alpha: 0.2),
                     ),
                   ),
                   child: Column(
                     children: [
                       Icon(
-                        Icons.error_outline,
+                        Icons.error_outline_rounded,
                         color: AppColors.error,
-                        size: 32,
+                        size: 36,
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -247,20 +260,18 @@ class _SetupLoadingScreenState extends ConsumerState<SetupLoadingScreen>
                         _errorMessage ?? 'Erro desconhecido',
                         style: textTheme.bodySmall?.copyWith(
                           color: AppColors.textSecondary,
+                          height: 1.4,
                         ),
                         textAlign: TextAlign.center,
                       ),
+                      const SizedBox(height: 20),
+                      DicumeElegantButton(
+                        onPressed: _retry,
+                        text: 'Tentar Novamente',
+                        icon: Icons.refresh,
+                      ),
                     ],
                   ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // Botão de retry
-                DicumeElegantButton(
-                  onPressed: _retry,
-                  text: 'Tentar Novamente',
-                  icon: Icons.refresh,
                 ),
               ],
 

@@ -14,11 +14,11 @@ class RefeicaoDoDiaModel {
   final List<ItemRefeicaoDoDiaModel> itens;
 
   // Campos adicionais para a UI
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   IconData? icone;
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   Color? cor;
-  @JsonKey(ignore: true)
+  @JsonKey(includeFromJson: false, includeToJson: false)
   String? horario; // Adicionado para compatibilidade com a UI existente
 
   RefeicaoDoDiaModel({
